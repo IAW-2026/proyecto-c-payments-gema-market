@@ -1,7 +1,6 @@
 /* UniHousing — Componentes compartidos (Tailwind) */
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useCallback } from "react";
 
 // ============== ICONOS (line, 1.5px) ==============
 const Icon = ({ name, size = 20, stroke = 1.5, className = "" }: any) => {

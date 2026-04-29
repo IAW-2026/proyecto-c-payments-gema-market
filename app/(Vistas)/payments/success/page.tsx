@@ -1,8 +1,7 @@
 "use client";
-import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { PayShell } from "../components/PayShell";
-import { Card, Button, Icon, Field, Input, Pill, fmtARS } from "../shared/components";
+import { PayShell } from "@/app/(Vistas)/payments/components/PayShell";
+import { Card, Button, Icon } from "@/app/(Vistas)/payments/shared/components";
 const Success = () => {
   const router = useRouter();
 

@@ -1,7 +1,6 @@
 "use client";
-import React from "react";
 import { useRouter } from "next/navigation";
-import { Icon } from "../shared/components";
+import { Icon } from "@/app/(Vistas)/payments/shared/components";
 const PayShell = ({ children, title, back }: any) => {
   const router = useRouter();
   

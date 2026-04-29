@@ -1,10 +1,7 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { PayShell } from "../components/PayShell";
-import { Card, Button, Icon, Field, Input, Pill, fmtARS } from "../shared/components";
+import { PayShell } from "@/app/(Vistas)/payments/components/PayShell";
+import { Card, Icon, Pill, fmtARS } from "@/app/(Vistas)/payments/shared/components";
 const History = () => {
-  const router = useRouter();
   const txs = [
     { id: "MP-7821-9384", date: "24 abr · 18:42", desc: "Pedido OR-2841", amount: -160300, method: "Visa •••• 3704", status: "ok" },
     { id: "MP-7745-2210", date: "18 abr · 11:15", desc: "Pedido OR-2832", amount: -42600, method: "Saldo MP", status: "ok" },
