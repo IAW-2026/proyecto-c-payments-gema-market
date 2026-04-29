@@ -6,13 +6,30 @@ import { Card, Button, Field, Input } from "@/app/(Vistas)/payments/shared/compo
 const CardForm = () => {
   const router = useRouter();
 
-  const [num, setNum] = useState("4509 9535 6623 3704");
+  const [num, setNum] = useState("4509-9535-6623-3704");
   const [name, setName] = useState("LUCIA MENDEZ");
   const [exp, setExp] = useState("11/26");
   const [cvc, setCvc] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
+
+  const handleNumChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, "");
+    const formatted = value.match(/.{1,4}/g)?.join("-") || "";
+    setNum(formatted.slice(0, 19));
+  };
+
+  const handleExpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, "");
+    let formatted = value;
+    if (value.length > 2) {
+      formatted = value.slice(0, 2) + "/" + value.slice(2, 4);
+    }
+    setExp(formatted);
+  };
+
   const maskedCvc = cvc ? "•".repeat(Math.min(cvc.length, 4)) : "•••";
   const showBack = focusedField === "cvc";
+
   return (
     <PayShell title="Tarjeta de crédito" back="/payments/methods">
       <div className="p-4 max-[599px]:pb-[104px] min-[600px]:p-5 lgx:p-6 lgx:flex lgx:flex-col lgx:flex-1">
@@ -66,10 +83,11 @@ const CardForm = () => {
           </div>
           <div className="lgx:flex lgx:flex-col lgx:flex-1 lgx:min-h-0">
             <div className="flex flex-col gap-3">
-              <Field label="Número de tarjeta"><Input icon="creditCard" value={num} onFocus={() => setFocusedField("num")} onChange={(e: any) => setNum(e.target.value)}/></Field>
-              <Field label="Nombre como figura"><Input value={name} onFocus={() => setFocusedField("name")} onChange={(e: any) => setName(e.target.value.toUpperCase())}/></Field>
+              <Field label="Número de tarjeta"><Input icon="creditCard" value={num} onFocus={() => setFocusedField("num")} onChange={handleNumChange} maxLength="19" inputMode="numeric"/></Field>
+              <Field label="Nombre como figura"><Input value={name} onFocus={() => setFocusedField("name")} onChange={(e: any) => setName(e.target.value.toUpperCase())} maxLength="26"/></Field>
               <div className="grid grid-cols-2 gap-2.5 max-[420px]:grid-cols-1">
-                <Field label="Vencimiento"><Input value={exp} onFocus={() => setFocusedField("exp")} onChange={(e: any) => setExp(e.target.value)} placeholder="MM/AA"/></Field>
+                <Field label="Vencimiento"><Input value={exp} onFocus={() => setFocusedField("exp")} onChange={handleExpChange} placeholder="MM/AA" maxLength="5" inputMode="numeric"/></Field>
+
                 <Field label="CVC"><Input value={cvc} onChange={(e: any) => setCvc(e.target.value.replace(/\D/g, "").slice(0, 4))} onFocus={() => setFocusedField("cvc")} onBlur={() => setFocusedField(null)} placeholder="..." type="password" inputMode="numeric" maxLength="4"/></Field>
               </div>
             </div>
