@@ -12,7 +12,7 @@ const Methods = () => {
     { id: "card", icon: "creditCard", title: "Tarjeta nueva", body: "Crédito o débito", brand: "#7f4f24" },
   ];
   return (
-    <PayShell title="Elegí cómo pagar" back="/payments/methods">
+    <PayShell title="Elegí cómo pagar" back="../index.html">
       <div className="p-4 max-[599px]:pb-[104px] min-[600px]:p-5 lgx:p-6 lgx:flex lgx:flex-col lgx:flex-1">
         <div className="grid grid-cols-1 gap-4 lgx:flex lgx:flex-col lgx:flex-1 lgx:gap-[18px]">
           <div>

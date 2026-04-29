@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { Client } from 'pg';
 
 export async function GET() {
-  // Necesitamos la cadena de conexión directa a PostgreSQL (Transaction pooling o Session)
+  // Cadena de conexión para pooling (POOL_MODE="transaction")
   const connectionString = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
   if (!connectionString) {
