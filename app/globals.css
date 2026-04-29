@@ -1,26 +1,111 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-bark: #582f0e;
+  --color-cocoa: #7f4f24;
+  --color-clay: #936639;
+  --color-sand: #a68a64;
+  --color-stone: #b6ad90;
+  --color-mist: #c2c5aa;
+  --color-sage: #a4ac86;
+  --color-moss: #656d4a;
+  --color-olive: #414833;
+  --color-forest: #333d29;
+  --color-paper: #faf8f3;
+  --color-cream: #f3efe5;
+  --color-bone: #ede7d8;
+  --color-ink: #1c1d18;
+  --color-ink-2: #3a3c33;
+  --color-ink-3: #6b6e60;
+  --color-line: #e2dccc;
+  --color-line-2: #d4ccb6;
+  --color-success: #4a6b3a;
+  --color-warn: #b58025;
+  --color-danger: #9a3a1f;
+
+  --font-sans: var(--font-inter), "Inter", "Geist", "-apple-system", "BlinkMacSystemFont", "system-ui", "sans-serif";
+  --font-mono: var(--font-jetbrains-mono), "JetBrains Mono", "ui-monospace", "SF Mono", "Menlo", "monospace";
+
+  --radius-r1: 8px;
+  --radius-r2: 14px;
+  --radius-r3: 22px;
+  --radius-r4: 32px;
+
+  --shadow-sh-1: 0 1px 2px rgba(40,30,15,.04), 0 2px 6px rgba(40,30,15,.04);
+  --shadow-sh-2: 0 4px 12px rgba(40,30,15,.06), 0 12px 24px rgba(40,30,15,.05);
+  --shadow-sh-3: 0 12px 32px rgba(40,30,15,.08), 0 24px 48px rgba(40,30,15,.06);
+
+  --breakpoint-lgx: 1100px;
+
+  --animate-shimmer: shimmer 1.4s infinite linear;
+  --animate-toast-in: toast-in .22s ease;
+  --animate-spin360: spin360 1s linear infinite;
+
+  --background-image-card-front: linear-gradient(135deg, #582f0e 0%, #7f4f24 50%, #936639 100%);
+  --background-image-card-back:  linear-gradient(135deg, #582f0e 0%, #7f4f24 54%, #936639 100%);
+  --background-image-card-chip:  linear-gradient(135deg, #d4a373, #fefae0);
+  --background-image-ph-base:    linear-gradient(135deg, #c2c5aa 0%, #b6ad90 100%);
+  --background-image-ph-stripes: repeating-linear-gradient(45deg, rgba(255,255,255,.08) 0 8px, transparent 8px 16px);
+  --background-image-cvc-stripes:repeating-linear-gradient(0deg, rgba(127,79,36,.18) 0 2px, transparent 2px 6px);
+  --background-image-compass:    radial-gradient(circle, #f3efe5, #faf8f3);
+  --background-image-hero-grain: radial-gradient(circle at 20% 10%, rgba(102,109,74,.06), transparent 50%), radial-gradient(circle at 80% 80%, rgba(127,79,36,.05), transparent 60%);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin360 {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@layer base {
+  * { box-sizing: border-box; min-width: 0; }
+  html, body { margin: 0; padding: 0; max-width: 100%; overflow-x: hidden; }
+  body {
+    font-family: Inter, Geist, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    background: #faf8f3;
+    color: #1c1d18;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "ss01", "cv11";
+    letter-spacing: 0;
+    min-height: 100vh;
   }
+  body * { letter-spacing: 0 !important; }
+  #root { max-width: 100%; min-height: 100vh; }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+  input, textarea, select { font-family: inherit; }
+  a { color: inherit; text-decoration: none; }
+  ::selection { background: #c2c5aa; color: #333d29; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #d4ccb6; border-radius: 99px; border: 2px solid #faf8f3; }
+  ::-webkit-scrollbar-thumb:hover { background: #b6ad90; }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .ph-img {
+    background: linear-gradient(135deg, #c2c5aa 0%, #b6ad90 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .ph-img::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.08) 0 8px, transparent 8px 16px);
+  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
+  .preserve-3d { transform-style: preserve-3d; }
+  .backface-hidden { backface-visibility: hidden; }
+  .persp-1200 { perspective: 1200px; }
 }
