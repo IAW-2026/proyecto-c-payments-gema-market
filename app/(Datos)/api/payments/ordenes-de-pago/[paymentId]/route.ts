@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getOrdenDePagoById } from "@/app/(Logica)/services/ordenes-de-pago.service";
 
 /**
  * GET /api/payments/ordenes-de-pago/:paymentId
@@ -9,7 +10,13 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ paymentId: string }> }
 ) {
+
   const { paymentId } = await params;
-  // TODO: Implementar
-  return NextResponse.json({ message: "Not implemented", paymentId }, { status: 501 });
+  try {
+  const ordenDePago = await getOrdenDePagoById(paymentId);
+
+    return NextResponse.json(ordenDePago, { status: 200 });
+  } catch (error) {
+    return NextResponse.json({ message: "Error al obtener la orden de pago" }, { status: 500 });
+  }
 }

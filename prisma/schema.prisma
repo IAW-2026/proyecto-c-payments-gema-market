@@ -37,7 +37,6 @@ model OrdenDePago {
   paidAt          DateTime? @map("paid_at")
 
   transacciones   Transaccion[]
-  disputas        Disputa[]
 
   @@map("orden_de_pago")
 }
@@ -54,19 +53,4 @@ model Transaccion {
   @@map("transaccion")
 }
 
-model Disputa {
-  id           String      @id @db.VarChar(26)
-  orderId      String      @map("order_id") @db.VarChar(255)
-  paymentId    String      @map("payment_id") @db.VarChar(26)
-  openedBy     String      @map("opened_by") @db.VarChar(26)
-  reason       String      @db.VarChar(255)
-  description  String?     @db.Text
-  notes        String?     @db.Text
-  status       String      @db.VarChar(50)
-  resolvedAt   DateTime?   @map("resolved_at")
-
-  ordenDePago  OrdenDePago @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-
-  @@map("disputa")
-}
 
