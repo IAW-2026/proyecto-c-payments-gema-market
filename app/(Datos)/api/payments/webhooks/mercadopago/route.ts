@@ -7,6 +7,6 @@ import { NextResponse } from "next/server";
  * TODO: Implementar validación de firma y procesamiento de eventos.
  */
 export async function POST() {
-  // TODO: Implementar
+  
   return NextResponse.json({ message: "Not implemented" }, { status: 501 });
 }
