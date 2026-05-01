@@ -16,10 +16,6 @@ export type PaymentStatus =
   | "charged_back"
   | "in_mediation";
 
-export type DisputeStatus =
-  | "open"
-  | "resolved_refunded"
-  | "resolved_rejected";
 
 // ─── Entidades de dominio ───────────────────────────────────────────
 
@@ -58,18 +54,6 @@ export interface TransaccionDTO {
   receivedAt: Date;
 }
 
-/** Disputa */
-export interface DisputaDTO {
-  id: string;
-  orderId: string;
-  paymentId: string;
-  openedBy: string;
-  reason: string;
-  description?: string | null;
-  notes?: string | null;
-  status: DisputeStatus;
-  resolvedAt?: Date | null;
-}
 
 // ─── Request bodies (API entrante) ─────────────────────────────────
 
@@ -91,18 +75,7 @@ export interface CreateOrdenDePagoRequest {
   return_url: string;
 }
 
-/** Body para POST /api/payments/disputas */
-export interface CreateDisputaRequest {
-  order_id: string;
-  reason: string;
-  description?: string;
-}
 
-/** Body para POST /api/payments/disputas/:id/resolver */
-export interface ResolveDisputaRequest {
-  resolution: "refunded" | "rejected";
-  notes?: string;
-}
 
 // ─── Response shapes (API saliente) ─────────────────────────────────
 

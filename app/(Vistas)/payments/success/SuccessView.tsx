@@ -9,10 +9,9 @@ export interface SuccessViewProps {
   paymentMethod: string;
   date: string;
   transactionId: string;
-  buyerFirstName: string;
 }
 
-const SuccessView = ({ totalAmount, orderId, paymentMethod, date, transactionId, buyerFirstName }: SuccessViewProps) => {
+const SuccessView = ({ totalAmount, orderId, paymentMethod, date, transactionId }: SuccessViewProps) => {
   const router = useRouter();
   const details = [
     { l: "Pedido", v: orderId },
@@ -30,7 +29,7 @@ const SuccessView = ({ totalAmount, orderId, paymentMethod, date, transactionId,
               <div className="w-[88px] h-[88px] mx-auto mb-[18px] rounded-full bg-success text-white flex items-center justify-center shadow-[0_8px_32px_-8px_rgba(64,117,67,.5)]">
                 <Icon name="check" size={42}/>
               </div>
-              <h2 className="m-0 mb-1.5 text-2xl font-semibold">Listo, {buyerFirstName}</h2>
+              <h2 className="m-0 mb-1.5 text-2xl font-semibold">¡Listo!</h2>
               <p className="m-0 text-ink-3">Tu pago se procesó correctamente.</p>
             </div>
             <Card padding={16} className="flex items-center gap-3 mb-3.5">

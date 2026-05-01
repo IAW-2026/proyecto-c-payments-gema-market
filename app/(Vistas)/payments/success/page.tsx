@@ -1,4 +1,4 @@
-import { getOrdenDePagoById } from "@/app/(Logica)/services/ordenes-de-pago.service";
+import { getOrdenesDePago } from "@/app/(Logica)/services/ordenes-de-pago.service";
 import SuccessView from "./SuccessView";
 
 /** Formatea una fecha a "DD mes · HH:MM" en español */
@@ -14,7 +14,8 @@ function formatDate(date: Date | null | undefined): string {
 }
 
 export default async function SuccessPage() {
-  const orden = await getOrdenDePagoById("pay_mock_001");
+  const ordenes = await getOrdenesDePago();
+  const orden = ordenes.find((o) => o.status === "approved") || ordenes[0];
 
   return (
     <SuccessView
@@ -23,7 +24,6 @@ export default async function SuccessPage() {
       paymentMethod="Visa •••• 3704"
       date={formatDate(orden?.paidAt)}
       transactionId={orden?.mpPaymentId ?? "—"}
-      buyerFirstName="Lucía"
     />
   );
 }
