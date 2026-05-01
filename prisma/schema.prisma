@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Usuario {
+  id            String   @id @db.VarChar(26)
+  clerkUserId   String   @unique @map("clerk_user_id") @db.VarChar(255)
+  email         String?  @db.VarChar(255)
+  fullName      String?  @map("full_name") @db.VarChar(255)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("usuario")
+}
+
+model OrdenDePago {
+  id              String   @id @db.VarChar(26)
+  buyerId         String   @map("buyer_id") @db.VarChar(26)
+  orders          Json     @map("orders")
+  totalAmount     Decimal  @map("total_amount") @db.Decimal(12, 2)
+  fee             Decimal  @map("fee") @db.Decimal(12, 2)
+  currency        String   @db.VarChar(3)
+  status          String   @db.VarChar(50)
+  mpPreferenceId  String?  @map("mp_preference_id") @db.VarChar(255)
+  mpPaymentId     String?  @map("mp_payment_id") @db.VarChar(255)
+  mpStatusDetail  String?  @map("mp_status_detail") @db.VarChar(255)
+  createdAt       DateTime @default(now()) @map("created_at")
+  paidAt          DateTime? @map("paid_at")
+
+  transacciones   Transaccion[]
+  disputas        Disputa[]
+
+  @@map("orden_de_pago")
+}
+
+model Transaccion {
+  id           String      @id @db.VarChar(26)
+  paymentId    String      @map("payment_id") @db.VarChar(26)
+  eventType    String      @map("event_type") @db.VarChar(100)
+  payloadJson  Json        @map("payload_json")
+  receivedAt   DateTime    @default(now()) @map("received_at")
+  
+  ordenDePago  OrdenDePago @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@map("transaccion")
+}
+
+model Disputa {
+  id           String      @id @db.VarChar(26)
+  orderId      String      @map("order_id") @db.VarChar(255)
+  paymentId    String      @map("payment_id") @db.VarChar(26)
+  openedBy     String      @map("opened_by") @db.VarChar(26)
+  reason       String      @db.VarChar(255)
+  description  String?     @db.Text
+  notes        String?     @db.Text
+  status       String      @db.VarChar(50)
+  resolvedAt   DateTime?   @map("resolved_at")
+
+  ordenDePago  OrdenDePago @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@map("disputa")
+}
+
