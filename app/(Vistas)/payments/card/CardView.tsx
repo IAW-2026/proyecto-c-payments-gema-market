@@ -6,14 +6,15 @@ import { Card, Button, Field, Input, fmtARS } from "@/app/(Vistas)/payments/shar
 
 export interface CardViewProps {
   totalAmount: number;
+
 }
 
 const CardView = ({ totalAmount }: CardViewProps) => {
   const router = useRouter();
 
-  const [num, setNum] = useState("4509-9535-6623-3704");
-  const [name, setName] = useState("LUCIA MENDEZ");
-  const [exp, setExp] = useState("11/26");
+  const [num, setNum] = useState("");
+  const [name, setName] = useState("");
+  const [exp, setExp] = useState("");
   const [cvc, setCvc] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
@@ -89,7 +90,7 @@ const CardView = ({ totalAmount }: CardViewProps) => {
           <div className="lgx:flex lgx:flex-col lgx:flex-1 lgx:min-h-0">
             <div className="flex flex-col gap-3">
               <Field label="Número de tarjeta"><Input icon="creditCard" value={num} onFocus={() => setFocusedField("num")} onChange={handleNumChange} maxLength="19" inputMode="numeric"/></Field>
-              <Field label="Nombre como figura"><Input value={name} onFocus={() => setFocusedField("name")} onChange={(e: any) => setName(e.target.value.toUpperCase())} maxLength="26"/></Field>
+              <Field label="Nombre como figura"><Input value={name} onFocus={() => setFocusedField("name")} onChange={(e: any) => setName(e.target.value.replace(/[^a-zA-Z\sñÑáéíóúÁÉÍÓÚüÜ]/g, "").toUpperCase())} maxLength="26" inputMode="text"/></Field>
               <div className="grid grid-cols-2 gap-2.5 max-[420px]:grid-cols-1">
                 <Field label="Vencimiento"><Input value={exp} onFocus={() => setFocusedField("exp")} onChange={handleExpChange} placeholder="MM/AA" maxLength="5" inputMode="numeric"/></Field>
 

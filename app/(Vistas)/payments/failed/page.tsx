@@ -1,4 +1,4 @@
-import { getOrdenDePagoById } from "@/app/(Logica)/services/ordenes-de-pago.service";
+import { getOrdenesDePago } from "@/app/(Logica)/services/ordenes-de-pago.service";
 import FailedView from "./FailedView";
 
 /** Mapea el código de rechazo de MP a un texto legible */
@@ -15,8 +15,8 @@ function mapRejectReason(detail: string | null | undefined): string {
 }
 
 export default async function FailedPage() {
-  // En el flujo real, se usaría la orden con status "rejected"
-  const orden = await getOrdenDePagoById("pay_mock_005");
+  const ordenes = await getOrdenesDePago();
+  const orden = ordenes.find((o) => o.status === "rejected") || ordenes[0];
 
   return (
     <FailedView

@@ -1,8 +1,9 @@
-import { getOrdenDePagoById } from "@/app/(Logica)/services/ordenes-de-pago.service";
+import { getOrdenesDePago } from "@/app/(Logica)/services/ordenes-de-pago.service";
 import CardView from "./CardView";
 
 export default async function CardPage() {
-  const orden = await getOrdenDePagoById("pay_mock_001");
+  const ordenes = await getOrdenesDePago();
+  const orden = ordenes.find((o) => o.status === "pending") || ordenes[0];
 
   return (
     <CardView totalAmount={orden?.totalAmount ?? 0} />
