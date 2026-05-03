@@ -4,24 +4,27 @@ import { PayShell } from "@/app/(Vistas)/payments/components/PayShell";
 import { Card, Button, Icon, fmtARS } from "@/app/(Vistas)/payments/shared/components";
 
 export interface FailedViewProps {
+  paymentId: string;
   totalAmount: number;
   orderId: string;
-  paymentMethod: string;
   reason: string;
   attemptId: string;
 }
 
-const FailedView = ({ totalAmount, orderId, paymentMethod, reason, attemptId }: FailedViewProps) => {
+/**
+ * Eliminado respecto al mock: "paymentMethod" hardcodeado como "Visa •••• 3704".
+ * Ahora se muestra solo el motivo de rechazo real de MP.
+ */
+const FailedView = ({ paymentId, totalAmount, orderId, reason, attemptId }: FailedViewProps) => {
   const router = useRouter();
   const details = [
     { l: "Pedido", v: orderId },
-    { l: "Método", v: paymentMethod },
     { l: "Motivo", v: reason },
     { l: "ID intento", v: attemptId, mono: true },
   ];
 
   return (
-    <PayShell title="Pago rechazado" back="/payments/methods">
+    <PayShell title="Pago rechazado" back={`/payments/checkout/${paymentId}/methods`}>
       <div className="px-4 py-8 max-[599px]:pb-[104px] min-[600px]:p-5 lgx:p-6 lgx:flex lgx:flex-col lgx:flex-1">
         <div className="grid grid-cols-1 gap-4 lgx:flex lgx:flex-col lgx:flex-1 lgx:gap-[18px]">
           <div>
@@ -56,8 +59,8 @@ const FailedView = ({ totalAmount, orderId, paymentMethod, reason, attemptId }: 
               </div>
             </Card>
             <div className="sticky bottom-0 bg-paper/95 backdrop-blur-[12px] border-t border-line p-4 -mx-4 mt-auto flex gap-2.5 max-[599px]:fixed max-[599px]:left-0 max-[599px]:right-0 max-[599px]:bottom-0 max-[599px]:z-[80] max-[599px]:bg-paper/[.98] max-[599px]:shadow-[0_-10px_28px_rgba(40,30,15,.08)] max-[599px]:mx-0 max-[420px]:flex-col lgx:!static lgx:!bg-transparent lgx:backdrop-blur-none lgx:!pt-[18px] lgx:!px-0 lgx:!pb-0 lgx:!mx-0">
-              <Button variant="secondary" full onClick={() => router.push("/payments/methods")}>Cambiar método</Button>
-              <Button variant="accent" full iconRight="arrowRight" onClick={() => router.push("/payments/card")}>Reintentar</Button>
+              <Button variant="secondary" full onClick={() => router.push(`/payments/checkout/${paymentId}/methods`)}>Cambiar método</Button>
+              <Button variant="accent" full iconRight="arrowRight" onClick={() => router.push(`/payments/checkout/${paymentId}/card`)}>Reintentar</Button>
             </div>
           </div>
         </div>
