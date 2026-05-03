@@ -11,13 +11,6 @@ export interface WalletBrickViewProps {
 
 /**
  * WalletBrickView — Integra el Wallet Brick de Mercado Pago.
- *
- * Elementos eliminados respecto al mock original:
- * - Saldo hardcodeado ("$ 47.250") → No es posible obtener saldo de MP del comprador.
- * - Tarjetas guardadas hardcodeadas (Visa 3704, Mastercard 8821) → MP las maneja internamente.
- * - Radio buttons "Pagar con" → El Brick controla la selección de fuente de fondos.
- * - Botón "Agregar tarjeta" → No aplica, MP lo gestiona internamente.
- *
  * El Wallet Brick renderiza el botón oficial de MP que redirige al checkout de MP.
  */
 const WalletBrickView = ({ paymentId, totalAmount, preferenceId }: WalletBrickViewProps) => {

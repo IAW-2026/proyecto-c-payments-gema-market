@@ -29,13 +29,6 @@ const preference = new Preference(mercadoPagoClient);
 
 /**
  * Crea una preferencia de Mercado Pago para el Wallet Brick.
- *
- * NOTA: Se usa SIN `purpose: "wallet_purchase"` para que el checkout
- * de MP ofrezca todas las opciones de pago (saldo, tarjetas guardadas,
- * nuevas tarjetas). Con `wallet_purchase` solo permite pagar con saldo,
- * y si la cuenta de test no tiene saldo suficiente, el botón queda
- * deshabilitado permanentemente.
- *
  * @param params - Datos de la orden de pago.
  * @returns ID de preferencia e init_point.
  */

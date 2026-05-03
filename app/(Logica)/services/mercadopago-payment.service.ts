@@ -66,6 +66,10 @@ export async function processCardPayment(
 
   console.log("[MP Card Payment] Enviando a MP:", JSON.stringify(paymentBody, null, 2));
 
+  
+  paymentBody.statement_descriptor = "UNIHOUSING";
+
+  try {
   const result = await payment.create({
     body: paymentBody,
     requestOptions: {
@@ -84,4 +88,14 @@ export async function processCardPayment(
     status: result.status ?? "unknown",
     statusDetail: result.status_detail ?? "",
   };
+  } catch (err: unknown) {
+    console.error("=== ERROR COMPLETO DE MERCADO PAGO ===");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mpErr = err as any;
+    console.error("Message:", mpErr?.message);
+    console.error("Status:", mpErr?.status);
+    console.error("Cause:", JSON.stringify(mpErr?.cause, null, 2));
+    console.error("======================================");
+    throw err;
+  }
 }
