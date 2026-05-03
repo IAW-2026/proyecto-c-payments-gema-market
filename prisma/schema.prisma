@@ -18,7 +18,6 @@ model Usuario {
   email         String?  @db.VarChar(255)
   fullName      String?  @map("full_name") @db.VarChar(255)
   createdAt     DateTime @default(now()) @map("created_at")
-  mpUserId      String?  @map("mp_user_id") @db.VarChar(255)
   @@map("usuario")
 }
 

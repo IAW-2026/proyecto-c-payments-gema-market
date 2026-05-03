@@ -22,21 +22,18 @@ export async function GET() {
           clerkUserId: "clerk_test_buyer",
           email: "buyer@unihousing.com",
           fullName: "Lucía Méndez",
-          mpUserId: null,
         },
         {
           id: user2Id,
           clerkUserId: "clerk_test_seller",
           email: "seller@unihousing.com",
           fullName: "Martín López",
-          mpUserId: null,
         },
         {
           id: user3Id,
           clerkUserId: "clerk_test_seller_mp",
           email: "seller.mp@unihousing.com",
           fullName: "Ana García",
-          mpUserId: "232494036", // Usuario con mp_user_id configurado
         },
       ],
       skipDuplicates: true,

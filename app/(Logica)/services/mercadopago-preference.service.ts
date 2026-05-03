@@ -55,6 +55,7 @@ export async function createPreference(
 
   const result = await preference.create({
     body: {
+      purpose: "wallet_purchase",
       items: mpItems,
       external_reference: paymentId,
       back_urls: {
