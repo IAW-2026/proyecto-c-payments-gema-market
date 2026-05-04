@@ -19,7 +19,7 @@ function mapToHistoryTransaction(orden: OrdenDePagoDTO): HistoryTransaction {
     date: formatDate(orden.paidAt ?? orden.createdAt),
     desc: `Pedido ${orden.orders[0]?.orderId ?? ""}`,
     amount: -orden.totalAmount,
-    method: "Visa •••• 3704",
+    method: "Mercado Pago",
     status: isFailed ? "fail" : isPending ? "pending" : "ok",
   };
 }

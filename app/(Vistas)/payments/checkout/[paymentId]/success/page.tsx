@@ -1,4 +1,5 @@
-import { getOrdenesDePago } from "@/app/(Logica)/services/ordenes-de-pago.service";
+import { getOrdenDePagoById } from "@/app/(Logica)/services/ordenes-de-pago.service";
+import { notFound } from "next/navigation";
 import SuccessView from "./SuccessView";
 
 /** Formatea una fecha a "DD mes · HH:MM" en español */
@@ -13,17 +14,23 @@ function formatDate(date: Date | null | undefined): string {
   return `${day} ${month} · ${hours}:${mins}`;
 }
 
-export default async function SuccessPage() {
-  const ordenes = await getOrdenesDePago();
-  const orden = ordenes.find((o) => o.status === "approved") || ordenes[0];
+export default async function SuccessPage({
+  params,
+}: {
+  params: Promise<{ paymentId: string }>;
+}) {
+  const { paymentId } = await params;
+  const orden = await getOrdenDePagoById(paymentId);
+
+  if (!orden) return notFound();
 
   return (
     <SuccessView
-      totalAmount={orden?.totalAmount ?? 0}
-      orderId={orden?.orders[0]?.orderId ?? "—"}
-      paymentMethod="Visa •••• 3704"
-      date={formatDate(orden?.paidAt)}
-      transactionId={orden?.mpPaymentId ?? "—"}
+      paymentId={orden.id}
+      totalAmount={orden.totalAmount}
+      orderId={orden.orders[0]?.orderId ?? "—"}
+      date={formatDate(orden.paidAt)}
+      transactionId={orden.mpPaymentId ?? "—"}
     />
   );
 }

@@ -30,7 +30,7 @@ const HistoryView = ({ transactions }: HistoryViewProps) => {
   });
 
   return (
-    <PayShell title="Historial de pagos" back="/payments/methods">
+    <PayShell title="Historial de pagos" back="/">
       <div className="p-4 min-[600px]:p-5 lgx:p-6">
         <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
           {FILTERS.map((f) => (

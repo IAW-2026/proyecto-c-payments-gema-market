@@ -4,24 +4,27 @@ import { PayShell } from "@/app/(Vistas)/payments/components/PayShell";
 import { Card, Button, Icon, fmtARS } from "@/app/(Vistas)/payments/shared/components";
 
 export interface SuccessViewProps {
+  paymentId: string;
   totalAmount: number;
   orderId: string;
-  paymentMethod: string;
   date: string;
   transactionId: string;
 }
 
-const SuccessView = ({ totalAmount, orderId, paymentMethod, date, transactionId }: SuccessViewProps) => {
+/**
+ * Eliminado respecto al mock: "paymentMethod" hardcodeado como "Visa •••• 3704".
+ * Ahora el método de pago es gestionado internamente por MP y se muestra el ID de transacción real.
+ */
+const SuccessView = ({ paymentId, totalAmount, orderId, date, transactionId }: SuccessViewProps) => {
   const router = useRouter();
   const details = [
     { l: "Pedido", v: orderId },
-    { l: "Método", v: paymentMethod },
     { l: "Fecha", v: date },
     { l: "ID transacción", v: transactionId, mono: true },
   ];
 
   return (
-    <PayShell title="Pago confirmado" back="/payments/methods">
+    <PayShell title="Pago confirmado" back={null}>
       <div className="px-4 py-8 max-[599px]:pb-[104px] min-[600px]:p-5 lgx:p-6 lgx:flex lgx:flex-col lgx:flex-1">
         <div className="grid grid-cols-1 gap-4 lgx:flex lgx:flex-col lgx:flex-1 lgx:gap-[18px]">
           <div>
@@ -38,7 +41,7 @@ const SuccessView = ({ totalAmount, orderId, paymentMethod, date, transactionId 
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-[13px] font-medium">Tu pedido empieza a prepararse</div>
-                <div className="text-[11px] text-ink-3">Llega entre el 26 y 28 de abril</div>
+                <div className="text-[11px] text-ink-3">Te notificaremos cuando esté en camino</div>
               </div>
             </Card>
           </div>
@@ -56,7 +59,7 @@ const SuccessView = ({ totalAmount, orderId, paymentMethod, date, transactionId 
               </div>
             </Card>
             <div className="sticky bottom-0 bg-paper/95 backdrop-blur-[12px] border-t border-line p-4 -mx-4 mt-auto flex gap-2.5 max-[599px]:fixed max-[599px]:left-0 max-[599px]:right-0 max-[599px]:bottom-0 max-[599px]:z-[80] max-[599px]:bg-paper/[.98] max-[599px]:shadow-[0_-10px_28px_rgba(40,30,15,.08)] max-[599px]:mx-0 max-[420px]:flex-col lgx:!static lgx:!bg-transparent lgx:backdrop-blur-none lgx:!pt-[18px] lgx:!px-0 lgx:!pb-0 lgx:!mx-0">
-              <Button variant="accent" full iconRight="arrowRight" onClick={() => router.push("../buyer/index.html#/order/" + orderId)}>Ver pedido</Button>
+              <Button variant="accent" full iconRight="arrowRight" onClick={() => router.push("/payments/history")}>Ver historial</Button>
             </div>
           </div>
         </div>
