@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { CreateOrdenDePagoRequest } from "@/app/(Logica)/types/payments.types";
-import { createOrdenDePago } from "@/app/(Logica)/services/ordenes-de-pago.service";
-import { getOrdenesDePago } from "@/app/(Logica)/services/ordenes-de-pago.service";
+import {
+  createOrdenDePago,
+  getOrdenesDePago,
+  updateOrdenDePagoPreference,
+} from "@/app/(Logica)/services/ordenes-de-pago.service";
 import { createPreference } from "@/app/(Logica)/services/mercadopago-preference.service";
 
 // ─── Fee de la plataforma ───────────────────────────────────────────
@@ -21,7 +24,7 @@ export async function POST(request: NextRequest) {
     if (!body.buyer_id || !body.orders?.length || !body.currency) {
       return NextResponse.json(
         { error: "Campos requeridos: buyer_id, orders, currency" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -38,38 +41,40 @@ export async function POST(request: NextRequest) {
     const totalAmount = orderItems.reduce((sum, o) => sum + o.amount, 0);
     const fee = Math.round(totalAmount * PLATFORM_FEE_RATE * 100) / 100;
 
-    // 1. Crear preferencia en Mercado Pago (para Wallet Brick)
-    const preferenceResult = await createPreference({
-      paymentId: "tmp", // Se reemplaza después de crear la orden
-      items: orderItems,
-      totalAmount,
-      currency: body.currency,
-    });
-
-    // 2. Persistir la orden de pago con la preferencia
+    // 1. Persistir la orden de pago (sin preferencia aún, necesitamos el ID real)
     const orden = await createOrdenDePago({
       buyerId: body.buyer_id,
       orders: orderItems,
       totalAmount,
       fee,
       currency: body.currency,
-      mpPreferenceId: preferenceResult.preferenceId,
     });
 
-    // 3. Responder con el contrato del API
+    // 2. Crear preferencia en Mercado Pago con el ID real de la orden
+    const preferenceResult = await createPreference({
+      paymentId: orden.id,
+      items: orderItems,
+      totalAmount,
+      currency: body.currency,
+    });
+
+    // 3. Vincular la preferencia a la orden
+    await updateOrdenDePagoPreference(orden.id, preferenceResult.preferenceId);
+
+    // 4. Responder con el contrato del API
     return NextResponse.json(
       {
         payment_id: orden.id,
         checkout_url: `/payments/checkout/${orden.id}/methods`,
         status: orden.status,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Error al crear orden de pago:", error);
     return NextResponse.json(
       { error: "Error interno al crear la orden de pago." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -104,7 +109,7 @@ export async function GET() {
     console.error("Error al listar órdenes de pago:", error);
     return NextResponse.json(
       { error: "Error interno al listar las órdenes de pago." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
