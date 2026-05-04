@@ -37,9 +37,10 @@ export interface UpdateOrdenDePagoStatusParams {
  * Crea una nueva orden de pago en la base de datos.
  */
 export async function createOrdenDePago(
-  params: CreateOrdenDePagoParams
+  params: CreateOrdenDePagoParams,
 ): Promise<OrdenDePagoDTO> {
-  const { buyerId, orders, totalAmount, fee, currency, mpPreferenceId } = params;
+  const { buyerId, orders, totalAmount, fee, currency, mpPreferenceId } =
+    params;
 
   const row = await prisma.ordenDePago.create({
     data: {
@@ -61,7 +62,7 @@ export async function createOrdenDePago(
  * Actualiza el estado de una orden de pago existente.
  */
 export async function updateOrdenDePagoStatus(
-  params: UpdateOrdenDePagoStatusParams
+  params: UpdateOrdenDePagoStatusParams,
 ): Promise<OrdenDePagoDTO> {
   const { paymentId, status, mpPaymentId, mpStatusDetail, paidAt } = params;
 
@@ -82,7 +83,6 @@ export async function updateOrdenDePagoStatus(
  * Obtiene todas las órdenes de pago.
  */
 export async function getOrdenesDePago(): Promise<OrdenDePagoDTO[]> {
-
   const rows = await prisma.ordenDePago.findMany({
     orderBy: { createdAt: "desc" },
   });
@@ -94,9 +94,8 @@ export async function getOrdenesDePago(): Promise<OrdenDePagoDTO[]> {
  * Obtiene una orden de pago por su ID (payment_id).
  */
 export async function getOrdenDePagoById(
-  paymentId: string
+  paymentId: string,
 ): Promise<OrdenDePagoDTO | null> {
-
   const row = await prisma.ordenDePago.findUnique({
     where: { id: paymentId },
   });
@@ -105,12 +104,27 @@ export async function getOrdenDePagoById(
 }
 
 /**
+ * Actualiza el mpPreferenceId de una orden de pago existente.
+ * Se usa después de crear la orden para vincularla con la preferencia de MP.
+ */
+export async function updateOrdenDePagoPreference(
+  paymentId: string,
+  mpPreferenceId: string,
+): Promise<OrdenDePagoDTO> {
+  const row = await prisma.ordenDePago.update({
+    where: { id: paymentId },
+    data: { mpPreferenceId },
+  });
+
+  return mapRowToDTO(row);
+}
+
+/**
  * Obtiene las órdenes de pago de un comprador específico.
  */
 export async function getOrdenesDePagoByBuyer(
-  buyerId: string
+  buyerId: string,
 ): Promise<OrdenDePagoDTO[]> {
-
   const rows = await prisma.ordenDePago.findMany({
     where: { buyerId },
     orderBy: { createdAt: "desc" },

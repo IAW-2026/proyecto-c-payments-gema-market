@@ -6,9 +6,9 @@ import FailedView from "./FailedView";
 function mapRejectReason(detail: string | null | undefined): string {
   const reasons: Record<string, string> = {
     cc_rejected_insufficient_amount: "Fondos insuficientes",
-    cc_rejected_bad_filled_security_code: "Código de seguridad incorrecto",
-    cc_rejected_bad_filled_date: "Fecha de vencimiento incorrecta",
-    cc_rejected_bad_filled_other: "Datos de tarjeta incorrectos",
+    cc_rejected_bad_filled_security_code: "Datos de pago incorrectos",
+    cc_rejected_bad_filled_date: "Datos de pago incorrectos",
+    cc_rejected_bad_filled_other: "Datos de pago incorrectos",
     cc_rejected_call_for_authorize: "No autorizado por el emisor",
     cc_rejected_high_risk: "Rechazado por seguridad",
   };
