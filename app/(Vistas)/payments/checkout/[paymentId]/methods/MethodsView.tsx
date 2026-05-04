@@ -5,11 +5,12 @@ import { PayShell } from "@/app/(Vistas)/payments/components/PayShell";
 import { Card, Button, Icon, fmtARS } from "@/app/(Vistas)/payments/shared/components";
 
 export interface MethodsViewProps {
+  paymentId: string;
   totalAmount: number;
   productCount: number;
 }
 
-const MethodsView = ({ totalAmount, productCount }: MethodsViewProps) => {
+const MethodsView = ({ paymentId, totalAmount, productCount }: MethodsViewProps) => {
   const router = useRouter();
 
   const [sel, setSel] = useState("mp");
@@ -18,7 +19,7 @@ const MethodsView = ({ totalAmount, productCount }: MethodsViewProps) => {
     { id: "card", icon: "creditCard", title: "Tarjeta nueva", body: "Crédito o débito", brand: "#7f4f24" },
   ];
   return (
-    <PayShell title="Elegí cómo pagar" back="../index.html">
+    <PayShell title="Elegí cómo pagar" back={null}>
       <div className="p-4 max-[599px]:pb-[104px] min-[600px]:p-5 lgx:p-6 lgx:flex lgx:flex-col lgx:flex-1">
         <div className="grid grid-cols-1 gap-4 lgx:flex lgx:flex-col lgx:flex-1 lgx:gap-[18px]">
           <div>
@@ -60,7 +61,7 @@ const MethodsView = ({ totalAmount, productCount }: MethodsViewProps) => {
               ))}
             </div>
             <div className="sticky bottom-0 bg-paper/95 backdrop-blur-[12px] border-t border-line p-4 -mx-4 mt-4 max-[599px]:fixed max-[599px]:left-0 max-[599px]:right-0 max-[599px]:bottom-0 max-[599px]:z-[80] max-[599px]:bg-paper/[.98] max-[599px]:shadow-[0_-10px_28px_rgba(40,30,15,.08)] max-[599px]:mx-0 lgx:!static lgx:!bg-transparent lgx:backdrop-blur-none lgx:!mt-auto lgx:!pt-[18px] lgx:!px-0 lgx:!pb-0 lgx:!mx-0">
-              <Button full size="lg" variant="accent" iconRight="arrowRight" onClick={() => router.push(sel === "card" ? "/payments/card" : "/payments/wallet")}>Continuar</Button>
+              <Button full size="lg" variant="accent" iconRight="arrowRight" onClick={() => router.push(`/payments/checkout/${paymentId}/${sel === "card" ? "card" : "wallet"}`)}>Continuar</Button>
             </div>
           </div>
         </div>

@@ -5,101 +5,83 @@
  */
 
 import prisma from "@/app/lib/prisma";
+import { generateUlid } from "@/app/lib/ulid";
 import type {
   OrdenDePagoDTO,
   OrderItem,
   PaymentStatus,
 } from "@/app/(Logica)/types/payments.types";
 
-const USE_MOCKS = process.env.USE_MOCKS === "true";
+// ─── Tipos de entrada ───────────────────────────────────────────────
 
-// ─── Mock data (fallback) ───────────────────────────────────────────
+export interface CreateOrdenDePagoParams {
+  buyerId: string;
+  orders: OrderItem[];
+  totalAmount: number;
+  fee: number;
+  currency: string;
+  mpPreferenceId?: string;
+}
 
-const MOCK_ORDENES: OrdenDePagoDTO[] = [
-  {
-    id: "pay_mock_001",
-    buyerId: "usr_mock_lucia",
-    orders: [
-      { orderId: "OR-2841", sellerId: "s2", productId: "p2", quoteId: "qte_001", amount: 89000, quantity: 1 },
-      { orderId: "OR-2841", sellerId: "s2", productId: "p6", quoteId: "qte_002", amount: 67000, quantity: 1 },
-      { orderId: "OR-2841", sellerId: "s5", productId: "p11", quoteId: "qte_003", amount: 4300, quantity: 1 },
-    ],
-    totalAmount: 160300,
-    fee: 4809,
-    currency: "ARS",
-    status: "approved",
-    mpPreferenceId: "MP-PREF-mock-001",
-    mpPaymentId: "MP-7821-9384",
-    mpStatusDetail: "accredited",
-    createdAt: new Date("2026-04-24T21:42:00Z"),
-    paidAt: new Date("2026-04-24T21:42:30Z"),
-  },
-  {
-    id: "pay_mock_002",
-    buyerId: "usr_mock_lucia",
-    orders: [{ orderId: "OR-2832", sellerId: "s4", productId: "p4", quoteId: "qte_004", amount: 42600, quantity: 1 }],
-    totalAmount: 42600,
-    fee: 1278,
-    currency: "ARS",
-    status: "approved",
-    mpPreferenceId: "MP-PREF-mock-002",
-    mpPaymentId: "MP-7745-2210",
-    mpStatusDetail: "accredited",
-    createdAt: new Date("2026-04-18T14:15:00Z"),
-    paidAt: new Date("2026-04-18T14:15:20Z"),
-  },
-  {
-    id: "pay_mock_003",
-    buyerId: "usr_mock_lucia",
-    orders: [{ orderId: "OR-2820", sellerId: "s3", productId: "p3", quoteId: "qte_005", amount: 28400, quantity: 1 }],
-    totalAmount: 28400,
-    fee: 852,
-    currency: "ARS",
-    status: "refunded",
-    mpPreferenceId: "MP-PREF-mock-003",
-    mpPaymentId: "MP-7689-1102",
-    mpStatusDetail: "refunded",
-    createdAt: new Date("2026-04-12T19:30:00Z"),
-    paidAt: new Date("2026-04-12T19:30:15Z"),
-  },
-  {
-    id: "pay_mock_004",
-    buyerId: "usr_mock_lucia",
-    orders: [{ orderId: "OR-2814", sellerId: "s2", productId: "p10", quoteId: "qte_006", amount: 97500, quantity: 1 }],
-    totalAmount: 97500,
-    fee: 2925,
-    currency: "ARS",
-    status: "approved",
-    mpPreferenceId: "MP-PREF-mock-004",
-    mpPaymentId: "MP-7612-8843",
-    mpStatusDetail: "accredited",
-    createdAt: new Date("2026-04-05T12:20:00Z"),
-    paidAt: new Date("2026-04-05T12:20:18Z"),
-  },
-  {
-    id: "pay_mock_005",
-    buyerId: "usr_mock_lucia",
-    orders: [{ orderId: "OR-2801", sellerId: "s5", productId: "p5", quoteId: "qte_007", amount: 55200, quantity: 1 }],
-    totalAmount: 55200,
-    fee: 1656,
-    currency: "ARS",
-    status: "rejected",
-    mpPreferenceId: "MP-PREF-mock-005",
-    mpPaymentId: "MP-7544-3321",
-    mpStatusDetail: "cc_rejected_insufficient_amount",
-    createdAt: new Date("2026-03-29T23:11:00Z"),
-    paidAt: null,
-  },
-];
+export interface UpdateOrdenDePagoStatusParams {
+  paymentId: string;
+  status: PaymentStatus;
+  mpPaymentId?: string;
+  mpStatusDetail?: string;
+  paidAt?: Date;
+}
 
 // ─── Servicio ───────────────────────────────────────────────────────
 
 /**
+ * Crea una nueva orden de pago en la base de datos.
+ */
+export async function createOrdenDePago(
+  params: CreateOrdenDePagoParams
+): Promise<OrdenDePagoDTO> {
+  const { buyerId, orders, totalAmount, fee, currency, mpPreferenceId } = params;
+
+  const row = await prisma.ordenDePago.create({
+    data: {
+      id: generateUlid("pay"),
+      buyerId,
+      orders: JSON.parse(JSON.stringify(orders)),
+      totalAmount,
+      fee,
+      currency,
+      status: "pending",
+      mpPreferenceId: mpPreferenceId ?? null,
+    },
+  });
+
+  return mapRowToDTO(row);
+}
+
+/**
+ * Actualiza el estado de una orden de pago existente.
+ */
+export async function updateOrdenDePagoStatus(
+  params: UpdateOrdenDePagoStatusParams
+): Promise<OrdenDePagoDTO> {
+  const { paymentId, status, mpPaymentId, mpStatusDetail, paidAt } = params;
+
+  const row = await prisma.ordenDePago.update({
+    where: { id: paymentId },
+    data: {
+      status,
+      ...(mpPaymentId != null && { mpPaymentId }),
+      ...(mpStatusDetail != null && { mpStatusDetail }),
+      ...(paidAt != null && { paidAt }),
+    },
+  });
+
+  return mapRowToDTO(row);
+}
+
+/**
  * Obtiene todas las órdenes de pago.
- * En modo mock devuelve el array de órdenes de ejemplo.
  */
 export async function getOrdenesDePago(): Promise<OrdenDePagoDTO[]> {
-  if (USE_MOCKS) return MOCK_ORDENES;
 
   const rows = await prisma.ordenDePago.findMany({
     orderBy: { createdAt: "desc" },
@@ -114,9 +96,6 @@ export async function getOrdenesDePago(): Promise<OrdenDePagoDTO[]> {
 export async function getOrdenDePagoById(
   paymentId: string
 ): Promise<OrdenDePagoDTO | null> {
-  if (USE_MOCKS) {
-    return MOCK_ORDENES.find((o) => o.id === paymentId) ?? MOCK_ORDENES[0];
-  }
 
   const row = await prisma.ordenDePago.findUnique({
     where: { id: paymentId },
@@ -131,9 +110,6 @@ export async function getOrdenDePagoById(
 export async function getOrdenesDePagoByBuyer(
   buyerId: string
 ): Promise<OrdenDePagoDTO[]> {
-  if (USE_MOCKS) {
-    return MOCK_ORDENES.filter((o) => o.buyerId === buyerId);
-  }
 
   const rows = await prisma.ordenDePago.findMany({
     where: { buyerId },

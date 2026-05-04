@@ -1,4 +1,5 @@
 import { getOrdenDePagoById } from "@/app/(Logica)/services/ordenes-de-pago.service";
+import { notFound } from "next/navigation";
 import FailedView from "./FailedView";
 
 /** Mapea el código de rechazo de MP a un texto legible */
@@ -14,17 +15,23 @@ function mapRejectReason(detail: string | null | undefined): string {
   return reasons[detail ?? ""] ?? "No autorizado por el emisor";
 }
 
-export default async function FailedPage() {
-  // En el flujo real, se usaría la orden con status "rejected"
-  const orden = await getOrdenDePagoById("pay_mock_005");
+export default async function FailedPage({
+  params,
+}: {
+  params: Promise<{ paymentId: string }>;
+}) {
+  const { paymentId } = await params;
+  const orden = await getOrdenDePagoById(paymentId);
+
+  if (!orden) return notFound();
 
   return (
     <FailedView
-      totalAmount={orden?.totalAmount ?? 0}
-      orderId={orden?.orders[0]?.orderId ?? "—"}
-      paymentMethod="Visa •••• 3704"
-      reason={mapRejectReason(orden?.mpStatusDetail)}
-      attemptId={orden?.mpPaymentId ?? "—"}
+      paymentId={orden.id}
+      totalAmount={orden.totalAmount}
+      orderId={orden.orders[0]?.orderId ?? "—"}
+      reason={mapRejectReason(orden.mpStatusDetail)}
+      attemptId={orden.mpPaymentId ?? "—"}
     />
   );
 }

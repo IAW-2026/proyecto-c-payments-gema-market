@@ -10,20 +10,17 @@ function formatDate(date: Date): string {
   return `${d.getDate()} ${months[d.getMonth()]} · ${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
 }
 
-/** Convierte una OrdenDePagoDTO a una transacción de historial para la vista */
 function mapToHistoryTransaction(orden: OrdenDePagoDTO): HistoryTransaction {
-  const isRefund = orden.status === "refunded";
   const isFailed = orden.status === "rejected" || orden.status === "cancelled";
+  const isPending = orden.status === "pending" || orden.status === "in_process" || orden.status === "in_mediation";
 
   return {
     id: orden.mpPaymentId ?? orden.id,
     date: formatDate(orden.paidAt ?? orden.createdAt),
-    desc: isRefund
-      ? `Devolución ${orden.orders[0]?.orderId ?? ""}`
-      : `Pedido ${orden.orders[0]?.orderId ?? ""}`,
-    amount: isRefund ? orden.totalAmount : -orden.totalAmount,
-    method: "Visa •••• 3704", // Hardcodeado — fuente: Mercado Pago
-    status: isRefund ? "refund" : isFailed ? "fail" : "ok",
+    desc: `Pedido ${orden.orders[0]?.orderId ?? ""}`,
+    amount: -orden.totalAmount,
+    method: "Mercado Pago",
+    status: isFailed ? "fail" : isPending ? "pending" : "ok",
   };
 }
 

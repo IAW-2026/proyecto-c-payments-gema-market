@@ -14,14 +14,18 @@
     "prisma:reset": "prisma migrate reset"
   },
   "dependencies": {
+    "@mercadopago/sdk-react": "^1.0.7",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.105.1",
+    "mercadopago": "^2.12.0",
     "next": "16.2.4",
+    "ngrok": "5.0.0-beta.2",
     "pg": "^8.20.0",
     "react": "19.2.5",
-    "react-dom": "19.2.5"
+    "react-dom": "19.2.5",
+    "ulid": "^3.0.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

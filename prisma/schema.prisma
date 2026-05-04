@@ -13,18 +13,17 @@ datasource db {
 }
 
 model Usuario {
-  id            String   @id @db.VarChar(26)
+  id            String   @id @db.VarChar(50)
   clerkUserId   String   @unique @map("clerk_user_id") @db.VarChar(255)
   email         String?  @db.VarChar(255)
   fullName      String?  @map("full_name") @db.VarChar(255)
   createdAt     DateTime @default(now()) @map("created_at")
-
   @@map("usuario")
 }
 
 model OrdenDePago {
-  id              String   @id @db.VarChar(26)
-  buyerId         String   @map("buyer_id") @db.VarChar(26)
+  id              String   @id @db.VarChar(50)
+  buyerId         String   @map("buyer_id") @db.VarChar(50)
   orders          Json     @map("orders")
   totalAmount     Decimal  @map("total_amount") @db.Decimal(12, 2)
   fee             Decimal  @map("fee") @db.Decimal(12, 2)
@@ -37,14 +36,13 @@ model OrdenDePago {
   paidAt          DateTime? @map("paid_at")
 
   transacciones   Transaccion[]
-  disputas        Disputa[]
 
   @@map("orden_de_pago")
 }
 
 model Transaccion {
-  id           String      @id @db.VarChar(26)
-  paymentId    String      @map("payment_id") @db.VarChar(26)
+  id           String      @id @db.VarChar(50)
+  paymentId    String      @map("payment_id") @db.VarChar(50)
   eventType    String      @map("event_type") @db.VarChar(100)
   payloadJson  Json        @map("payload_json")
   receivedAt   DateTime    @default(now()) @map("received_at")
@@ -54,19 +52,4 @@ model Transaccion {
   @@map("transaccion")
 }
 
-model Disputa {
-  id           String      @id @db.VarChar(26)
-  orderId      String      @map("order_id") @db.VarChar(255)
-  paymentId    String      @map("payment_id") @db.VarChar(26)
-  openedBy     String      @map("opened_by") @db.VarChar(26)
-  reason       String      @db.VarChar(255)
-  description  String?     @db.Text
-  notes        String?     @db.Text
-  status       String      @db.VarChar(50)
-  resolvedAt   DateTime?   @map("resolved_at")
-
-  ordenDePago  OrdenDePago @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-
-  @@map("disputa")
-}
 

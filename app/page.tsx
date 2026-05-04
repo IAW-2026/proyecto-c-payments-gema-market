@@ -2,7 +2,7 @@
 import { redirect } from "next/navigation";
 
 export default async function Home() {
- redirect("/payments/methods");
+ redirect("/payments/history");
 }
 
 
