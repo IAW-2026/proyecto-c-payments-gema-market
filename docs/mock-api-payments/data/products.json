@@ -1,0 +1,30 @@
+[
+  {
+    "product_id": "prd_01HXYZDESK0001",
+    "seller_id": "usr_01HXYZSELLER01",
+    "title": "Escritorio de madera maciza",
+    "stock": 1,
+    "status": "active"
+  },
+  {
+    "product_id": "prd_01HXYZCHAIR001",
+    "seller_id": "usr_01HXYZSELLER01",
+    "title": "Silla ergonómica de oficina",
+    "stock": 2,
+    "status": "active"
+  },
+  {
+    "product_id": "prd_01HXYZPHONE001",
+    "seller_id": "usr_01HXYZSELLER02",
+    "title": "Samsung Galaxy A54 128GB",
+    "stock": 1,
+    "status": "active"
+  },
+  {
+    "product_id": "prd_01HXYZBIKE0001",
+    "seller_id": "usr_01HXYZSELLER01",
+    "title": "Bicicleta de montaña rodado 29",
+    "stock": 0,
+    "status": "paused"
+  }
+]

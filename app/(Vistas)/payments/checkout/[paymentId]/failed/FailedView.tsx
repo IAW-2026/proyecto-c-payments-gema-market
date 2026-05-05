@@ -16,10 +16,6 @@ export interface FailedViewProps {
   attemptId: string;
 }
 
-/**
- * Eliminado respecto al mock: "paymentMethod" hardcodeado como "Visa •••• 3704".
- * Ahora se muestra solo el motivo de rechazo real de MP.
- */
 const FailedView = ({
   paymentId,
   totalAmount,
@@ -29,6 +25,7 @@ const FailedView = ({
 }: FailedViewProps) => {
   const router = useRouter();
   const details = [
+    { l: "ID-pago", v: paymentId, mono: true },
     { l: "Pedido", v: orderId },
     { l: "Motivo", v: reason },
     { l: "ID intento", v: attemptId, mono: true },

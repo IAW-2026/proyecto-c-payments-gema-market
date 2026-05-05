@@ -15,7 +15,7 @@ export default async function MethodsPage({
   return (
     <MethodsView
       paymentId={orden.id}
-      totalAmount={orden.totalAmount}
+      totalAmount={Number(orden.totalAmount)}
       productCount={orden.orders.length}
     />
   );

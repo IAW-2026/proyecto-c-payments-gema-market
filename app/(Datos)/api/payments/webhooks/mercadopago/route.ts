@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Payment } from "mercadopago";
 import mercadoPagoClient from "@/app/lib/mercadopago";
 import { updateOrdenDePagoStatus } from "@/app/(Logica)/services/ordenes-de-pago.service";
-import prisma from "@/app/lib/prisma";
-import { generateUlid } from "@/app/lib/ulid";
+import { createTransaccion } from "@/app/(Logica)/services/transacciones.service";
 import type { PaymentStatus } from "@/app/(Logica)/types/payments.types";
 
 const paymentApi = new Payment(mercadoPagoClient);
@@ -11,9 +10,6 @@ const paymentApi = new Payment(mercadoPagoClient);
 /**
  * POST /api/payments/webhooks/mercadopago
  * Recibe notificaciones IPN/Webhook de Mercado Pago.
- *
- * Nota: La validación de firma (X-Signature) no se implementa aún
- * ya que la app está en sandbox/local. Se agregará al deployar.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -60,14 +56,11 @@ export async function POST(request: NextRequest) {
       paidAt: internalStatus === "approved" ? new Date() : undefined,
     });
 
-    // Registrar la transacción (evento)
-    await prisma.transaccion.create({
-      data: {
-        id: generateUlid("txn"),
-        paymentId,
-        eventType: body.action ?? body.type,
-        payloadJson: body,
-      },
+    // Registrar la transaccion (evento)
+    await createTransaccion({
+      paymentId,
+      eventType: body.action ?? body.type,
+      payloadJson: body,
     });
 
     return NextResponse.json({ received: true }, { status: 200 });

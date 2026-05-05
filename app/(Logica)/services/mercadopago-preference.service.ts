@@ -2,7 +2,6 @@
  * Servicio de Preferencias de Mercado Pago.
  *
  * Encapsula la creación de preferencias en MP para el Wallet Brick.
- * Single Responsibility: solo interactúa con la API de preferencias de MP.
  */
 
 import { Preference } from "mercadopago";

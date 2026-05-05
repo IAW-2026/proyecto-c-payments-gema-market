@@ -1,0 +1,34 @@
+[
+  {
+    "payment_id": "pay_01HXYZAPPROVED01",
+    "event": "pago-confirmado",
+    "received_at": "2026-04-17T14:32:15Z",
+    "orders": [
+      {
+        "order_id": "ord_01HXYZAPPROVED",
+        "product_id": "prd_01HXYZDESK0001",
+        "quote_id": "qte_01HXYZQUOTE0001",
+        "amount": 18500.00,
+        "fee": 185.00,
+        "currency": "ARS",
+        "paid_at": "2026-04-17T14:32:00Z"
+      }
+    ]
+  },
+  {
+    "order_id": "ord_01HXYZMEDIATION",
+    "event": "disputa-abierta",
+    "received_at": "2026-04-18T10:01:00Z",
+    "dispute_id": "dsp_01HXYZOPEN0001",
+    "reason": "product_not_as_described",
+    "description": "El producto llegó dañado."
+  },
+  {
+    "order_id": "ord_01HXYZMEDIATION",
+    "event": "disputa-resuelta",
+    "received_at": "2026-04-22T09:01:00Z",
+    "dispute_id": "dsp_01HXYZOPEN0001",
+    "resolution": "refunded",
+    "resolved_at": "2026-04-22T09:00:00Z"
+  }
+]
