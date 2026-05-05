@@ -33,7 +33,7 @@ export async function GET(
         quote_id: o.quoteId,
         amount: o.amount,
       })),
-      total_amount: ordenDePago.totalAmount,
+      total_amount: Number(ordenDePago.totalAmount),
       currency: ordenDePago.currency,
       status: ordenDePago.status,
       mp_payment_id: ordenDePago.mpPaymentId,

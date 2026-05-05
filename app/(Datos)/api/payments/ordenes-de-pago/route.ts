@@ -10,8 +10,7 @@ import {
   updateOrdenDePagoPreference,
 } from "@/app/(Logica)/services/ordenes-de-pago.service";
 import { createPreference } from "@/app/(Logica)/services/mercadopago-preference.service";
-
-const PLATFORM_FEE_RATE = 0.05;
+import { calculateFee } from "@/app/lib/util";
 
 /**
  * POST /api/payments/ordenes-de-pago
@@ -40,7 +39,7 @@ export async function POST(request: NextRequest) {
     }));
 
     const totalAmount = orderItems.reduce((sum, o) => sum + o.amount, 0);
-    const fee = Math.round(totalAmount * PLATFORM_FEE_RATE * 100) / 100;
+    const fee = calculateFee(totalAmount);
 
     // 1. Persistir la orden de pago (sin preferencia aún, necesitamos el ID real)
     const orden = await createOrdenDePago({
@@ -97,7 +96,7 @@ export async function GET() {
         quote_id: oi.quoteId,
         amount: oi.amount,
       })),
-      total_amount: o.totalAmount,
+      total_amount: Number(o.totalAmount),
       currency: o.currency,
       status: o.status,
       mp_payment_id: o.mpPaymentId,

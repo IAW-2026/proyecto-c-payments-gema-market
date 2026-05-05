@@ -5,11 +5,8 @@
 
 import prisma from "@/app/lib/prisma";
 import { generateUlid } from "@/app/lib/ulid";
-import type {
-  OrdenDePagoDTO,
-  OrderItem,
-  PaymentStatus,
-} from "@/app/(Logica)/types/payments.types";
+import type { OrderItem, PaymentStatus } from "@/app/(Logica)/types/payments.types";
+import type { Prisma } from "@prisma/client";
 
 // ─── Tipos de entrada ───────────────────────────────────────────────
 
@@ -30,6 +27,13 @@ export interface UpdateOrdenDePagoStatusParams {
   paidAt?: Date;
 }
 
+// ─── Tipo de salida ─────────────────────────────────────────────────
+
+export type OrdenDePago = Omit<Prisma.OrdenDePagoGetPayload<Record<string, never>>, "orders" | "status"> & {
+  orders: OrderItem[];
+  status: PaymentStatus;
+};
+
 // ─── Servicio ───────────────────────────────────────────────────────
 
 /**
@@ -37,7 +41,7 @@ export interface UpdateOrdenDePagoStatusParams {
  */
 export async function createOrdenDePago(
   params: CreateOrdenDePagoParams,
-): Promise<OrdenDePagoDTO> {
+): Promise<OrdenDePago> {
   const { buyerId, orders, totalAmount, fee, currency, mpPreferenceId } =
     params;
 
@@ -54,7 +58,7 @@ export async function createOrdenDePago(
     },
   });
 
-  return mapRowToDTO(row);
+  return { ...row, orders: row.orders as unknown as OrderItem[], status: row.status as PaymentStatus };
 }
 
 /**
@@ -62,7 +66,7 @@ export async function createOrdenDePago(
  */
 export async function updateOrdenDePagoStatus(
   params: UpdateOrdenDePagoStatusParams,
-): Promise<OrdenDePagoDTO> {
+): Promise<OrdenDePago> {
   const { paymentId, status, mpPaymentId, mpStatusDetail, paidAt } = params;
 
   const row = await prisma.ordenDePago.update({
@@ -75,18 +79,18 @@ export async function updateOrdenDePagoStatus(
     },
   });
 
-  return mapRowToDTO(row);
+  return { ...row, orders: row.orders as unknown as OrderItem[], status: row.status as PaymentStatus };
 }
 
 /**
  * Obtiene todas las órdenes de pago.
  */
-export async function getOrdenesDePago(): Promise<OrdenDePagoDTO[]> {
+export async function getOrdenesDePago(): Promise<OrdenDePago[]> {
   const rows = await prisma.ordenDePago.findMany({
     orderBy: { createdAt: "desc" },
   });
 
-  return rows.map(mapRowToDTO);
+  return rows.map((r) => ({ ...r, orders: r.orders as unknown as OrderItem[], status: r.status as PaymentStatus }));
 }
 
 /**
@@ -94,12 +98,12 @@ export async function getOrdenesDePago(): Promise<OrdenDePagoDTO[]> {
  */
 export async function getOrdenDePagoById(
   paymentId: string,
-): Promise<OrdenDePagoDTO | null> {
+): Promise<OrdenDePago | null> {
   const row = await prisma.ordenDePago.findUnique({
     where: { id: paymentId },
   });
 
-  return row ? mapRowToDTO(row) : null;
+  return row ? { ...row, orders: row.orders as unknown as OrderItem[], status: row.status as PaymentStatus } : null;
 }
 
 /**
@@ -109,13 +113,13 @@ export async function getOrdenDePagoById(
 export async function updateOrdenDePagoPreference(
   paymentId: string,
   mpPreferenceId: string,
-): Promise<OrdenDePagoDTO> {
+): Promise<OrdenDePago> {
   const row = await prisma.ordenDePago.update({
     where: { id: paymentId },
     data: { mpPreferenceId },
   });
 
-  return mapRowToDTO(row);
+  return { ...row, orders: row.orders as unknown as OrderItem[], status: row.status as PaymentStatus };
 }
 
 /**
@@ -123,43 +127,11 @@ export async function updateOrdenDePagoPreference(
  */
 export async function getOrdenesDePagoByBuyer(
   buyerId: string,
-): Promise<OrdenDePagoDTO[]> {
+): Promise<OrdenDePago[]> {
   const rows = await prisma.ordenDePago.findMany({
     where: { buyerId },
     orderBy: { createdAt: "desc" },
   });
 
-  return rows.map(mapRowToDTO);
-}
-
-// ─── Mapper ─────────────────────────────────────────────────────────
-
-function mapRowToDTO(row: {
-  id: string;
-  buyerId: string;
-  orders: unknown;
-  totalAmount: unknown;
-  fee: unknown;
-  currency: string;
-  status: string;
-  mpPreferenceId: string | null;
-  mpPaymentId: string | null;
-  mpStatusDetail: string | null;
-  createdAt: Date;
-  paidAt: Date | null;
-}): OrdenDePagoDTO {
-  return {
-    id: row.id,
-    buyerId: row.buyerId,
-    orders: row.orders as OrderItem[],
-    totalAmount: Number(row.totalAmount),
-    fee: Number(row.fee),
-    currency: row.currency,
-    status: row.status as PaymentStatus,
-    mpPreferenceId: row.mpPreferenceId,
-    mpPaymentId: row.mpPaymentId,
-    mpStatusDetail: row.mpStatusDetail,
-    createdAt: row.createdAt,
-    paidAt: row.paidAt,
-  };
+  return rows.map((r) => ({ ...r, orders: r.orders as unknown as OrderItem[], status: r.status as PaymentStatus }));
 }

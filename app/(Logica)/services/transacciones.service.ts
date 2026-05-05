@@ -4,38 +4,47 @@
  */
 
 import prisma from "@/app/lib/prisma";
-import type { TransaccionDTO } from "@/app/(Logica)/types/payments.types";
+import { generateUlid } from "@/app/lib/ulid";
+import type { Prisma } from "@prisma/client";
+
+// ─── Tipos de entrada ───────────────────────────────────────────────
+
+export interface CreateTransaccionParams {
+  paymentId: string;
+  eventType: string;
+  payloadJson: Record<string, unknown>;
+}
+
+// ─── Tipo de salida ─────────────────────────────────────────────────
+
+export type Transaccion = Prisma.TransaccionGetPayload<Record<string, never>>;
 
 // ─── Servicio ───────────────────────────────────────────────────────
+
+/**
+ * Crea una nueva transaccion (evento de Mercado Pago) en la base de datos.
+ */
+export async function createTransaccion(
+  params: CreateTransaccionParams,
+): Promise<void> {
+  await prisma.transaccion.create({
+    data: {
+      id: generateUlid("txn"),
+      paymentId: params.paymentId,
+      eventType: params.eventType,
+      payloadJson: params.payloadJson as Prisma.InputJsonValue,
+    },
+  });
+}
 
 /**
  * Obtiene todas las transacciones asociadas a una orden de pago.
  */
 export async function getTransaccionesByPaymentId(
   paymentId: string,
-): Promise<TransaccionDTO[]> {
-  const rows = await prisma.transaccion.findMany({
+): Promise<Transaccion[]> {
+  return prisma.transaccion.findMany({
     where: { paymentId },
     orderBy: { receivedAt: "desc" },
   });
-
-  return rows.map(mapRowToDTO);
-}
-
-// ─── Mapper ─────────────────────────────────────────────────────────
-
-function mapRowToDTO(row: {
-  id: string;
-  paymentId: string;
-  eventType: string;
-  payloadJson: unknown;
-  receivedAt: Date;
-}): TransaccionDTO {
-  return {
-    id: row.id,
-    paymentId: row.paymentId,
-    eventType: row.eventType,
-    payloadJson: row.payloadJson as Record<string, unknown>,
-    receivedAt: row.receivedAt,
-  };
 }
