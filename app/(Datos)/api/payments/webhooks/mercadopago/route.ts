@@ -11,9 +11,6 @@ const paymentApi = new Payment(mercadoPagoClient);
 /**
  * POST /api/payments/webhooks/mercadopago
  * Recibe notificaciones IPN/Webhook de Mercado Pago.
- *
- * Nota: La validación de firma (X-Signature) no se implementa aún
- * ya que la app está en sandbox/local. Se agregará al deployar.
  */
 export async function POST(request: NextRequest) {
   try {

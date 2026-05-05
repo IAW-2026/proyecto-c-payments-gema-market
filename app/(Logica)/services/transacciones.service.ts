@@ -1,13 +1,10 @@
 /**
  * Servicio de Transacciones.
  * Encapsula las consultas Prisma para la entidad Transaccion (eventos de Mercado Pago).
- * Principio: Single Responsibility — solo maneja persistencia de transacciones/eventos.
  */
 
 import prisma from "@/app/lib/prisma";
 import type { TransaccionDTO } from "@/app/(Logica)/types/payments.types";
-
-
 
 // ─── Servicio ───────────────────────────────────────────────────────
 
@@ -15,9 +12,8 @@ import type { TransaccionDTO } from "@/app/(Logica)/types/payments.types";
  * Obtiene todas las transacciones asociadas a una orden de pago.
  */
 export async function getTransaccionesByPaymentId(
-  paymentId: string
+  paymentId: string,
 ): Promise<TransaccionDTO[]> {
-
   const rows = await prisma.transaccion.findMany({
     where: { paymentId },
     orderBy: { receivedAt: "desc" },

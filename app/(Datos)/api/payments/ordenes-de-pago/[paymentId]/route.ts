@@ -1,22 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOrdenDePagoById } from "@/app/(Logica)/services/ordenes-de-pago.service";
+import type { GetOrdenDePagoResponse } from "@/app/(Logica)/types/payments.types";
 
 /**
  * GET /api/payments/ordenes-de-pago/:paymentId
  * Consulta el estado actual de una orden de pago (consumido por Buyer, Seller, Control Plane).
- * TODO: Implementar consulta real con el servicio.
+ *
  */
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ paymentId: string }> }
+  { params }: { params: Promise<{ paymentId: string }> },
 ) {
-
   const { paymentId } = await params;
-  try {
-  const ordenDePago = await getOrdenDePagoById(paymentId);
 
-    return NextResponse.json(ordenDePago, { status: 200 });
-  } catch (error) {
-    return NextResponse.json({ message: "Error al obtener la orden de pago" }, { status: 500 });
+  try {
+    const ordenDePago = await getOrdenDePagoById(paymentId);
+
+    if (!ordenDePago) {
+      return NextResponse.json(
+        { error: "Orden de pago no encontrada." },
+        { status: 404 },
+      );
+    }
+
+    const response: GetOrdenDePagoResponse = {
+      payment_id: ordenDePago.id,
+      buyer_id: ordenDePago.buyerId,
+      orders: ordenDePago.orders.map((o) => ({
+        order_id: o.orderId,
+        seller_id: o.sellerId,
+        product_id: o.productId,
+        quote_id: o.quoteId,
+        amount: o.amount,
+      })),
+      total_amount: ordenDePago.totalAmount,
+      currency: ordenDePago.currency,
+      status: ordenDePago.status,
+      mp_payment_id: ordenDePago.mpPaymentId,
+      mp_status_detail: ordenDePago.mpStatusDetail,
+      created_at: ordenDePago.createdAt.toISOString(),
+      paid_at: ordenDePago.paidAt?.toISOString() ?? null,
+    };
+
+    return NextResponse.json(response, { status: 200 });
+  } catch {
+    return NextResponse.json(
+      { error: "Error al obtener la orden de pago." },
+      { status: 500 },
+    );
   }
 }

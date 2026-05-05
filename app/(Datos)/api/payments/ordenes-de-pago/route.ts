@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { CreateOrdenDePagoRequest } from "@/app/(Logica)/types/payments.types";
+import type {
+  CreateOrdenDePagoRequest,
+  CreateOrdenDePagoResponse,
+  GetOrdenDePagoResponse,
+} from "@/app/(Logica)/types/payments.types";
 import {
   createOrdenDePago,
   getOrdenesDePago,
@@ -7,14 +11,11 @@ import {
 } from "@/app/(Logica)/services/ordenes-de-pago.service";
 import { createPreference } from "@/app/(Logica)/services/mercadopago-preference.service";
 
-// ─── Fee de la plataforma ───────────────────────────────────────────
-
-const PLATFORM_FEE_RATE = 0.05; // 5% de comisión
+const PLATFORM_FEE_RATE = 0.05;
 
 /**
  * POST /api/payments/ordenes-de-pago
  * Crea una nueva orden de pago y su preferencia en Mercado Pago.
- * Consumido por: Buyer App.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -62,14 +63,13 @@ export async function POST(request: NextRequest) {
     await updateOrdenDePagoPreference(orden.id, preferenceResult.preferenceId);
 
     // 4. Responder con el contrato del API
-    return NextResponse.json(
-      {
-        payment_id: orden.id,
-        checkout_url: `/payments/checkout/${orden.id}/methods`,
-        status: orden.status,
-      },
-      { status: 201 },
-    );
+    const response: CreateOrdenDePagoResponse = {
+      payment_id: orden.id,
+      checkout_url: `/payments/checkout/${orden.id}/methods`,
+      status: orden.status,
+    };
+
+    return NextResponse.json(response, { status: 201 });
   } catch (error) {
     console.error("Error al crear orden de pago:", error);
     return NextResponse.json(
@@ -87,7 +87,7 @@ export async function GET() {
   try {
     const ordenes = await getOrdenesDePago();
 
-    const items = ordenes.map((o) => ({
+    const items: GetOrdenDePagoResponse[] = ordenes.map((o) => ({
       payment_id: o.id,
       buyer_id: o.buyerId,
       orders: o.orders.map((oi) => ({
@@ -100,6 +100,8 @@ export async function GET() {
       total_amount: o.totalAmount,
       currency: o.currency,
       status: o.status,
+      mp_payment_id: o.mpPaymentId,
+      mp_status_detail: o.mpStatusDetail,
       created_at: o.createdAt.toISOString(),
       paid_at: o.paidAt?.toISOString() ?? null,
     }));

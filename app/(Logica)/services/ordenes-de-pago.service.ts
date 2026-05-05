@@ -1,7 +1,6 @@
 /**
  * Servicio de Órdenes de Pago.
  * Encapsula las consultas Prisma para la entidad OrdenDePago.
- * Principio: Single Responsibility — solo maneja persistencia de órdenes de pago.
  */
 
 import prisma from "@/app/lib/prisma";
