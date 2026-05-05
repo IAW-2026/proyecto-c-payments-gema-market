@@ -13,26 +13,42 @@ const paymentApi = new Payment(mercadoPagoClient);
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const url = new URL(request.url);
+    const queryTopic = url.searchParams.get("topic") || url.searchParams.get("type");
+    const queryId = url.searchParams.get("id") || url.searchParams.get("data.id");
 
-    // Solo procesar notificaciones de tipo "payment"
-    if (body.type !== "payment" || !body.data?.id) {
-      return NextResponse.json({ received: true }, { status: 200 });
+    let body: any = {};
+    try {
+      const text = await request.text();
+      if (text) {
+        body = JSON.parse(text);
+      }
+    } catch (e) {
+      // Ignorar error si el body está vacío o no es un JSON válido
     }
 
-    const mpPaymentId = String(body.data.id);
+    const eventType = body.type || queryTopic;
+    const mpPaymentIdRaw = body.data?.id || queryId;
 
-    // Consultar el estado real del pago en Mercado Pago
-    const mpPayment = await paymentApi.get({ id: mpPaymentId });
+    if (eventType !== "payment" || !mpPaymentIdRaw) {
+      return new NextResponse(null, { status: 200 });
+    }
+
+    const mpPaymentId = String(mpPaymentIdRaw);
+
+    let mpPayment;
+    try {
+      mpPayment = await paymentApi.get({ id: mpPaymentId });
+    } catch (apiError: any) {
+      return new NextResponse(null, { status: 200 });
+    }
 
     if (!mpPayment || !mpPayment.external_reference) {
-      console.warn("Webhook: pago sin external_reference:", mpPaymentId);
-      return NextResponse.json({ received: true }, { status: 200 });
+      return new NextResponse(null, { status: 200 });
     }
 
     const paymentId = mpPayment.external_reference;
 
-    // Mapear status de MP a status interno
     const statusMap: Record<string, PaymentStatus> = {
       approved: "approved",
       in_process: "in_process",
@@ -47,7 +63,6 @@ export async function POST(request: NextRequest) {
     const internalStatus: PaymentStatus =
       statusMap[mpPayment.status ?? ""] ?? "pending";
 
-    // Actualizar la orden de pago en BD
     await updateOrdenDePagoStatus({
       paymentId,
       status: internalStatus,
@@ -56,17 +71,18 @@ export async function POST(request: NextRequest) {
       paidAt: internalStatus === "approved" ? new Date() : undefined,
     });
 
-    // Registrar la transaccion (evento)
+    const payloadToSave = Object.keys(body).length > 0
+      ? body
+      : { queryParams: Object.fromEntries(url.searchParams) };
+
     await createTransaccion({
       paymentId,
-      eventType: body.action ?? body.type,
-      payloadJson: body,
+      eventType: body.action ?? eventType,
+      payloadJson: payloadToSave,
     });
 
-    return NextResponse.json({ received: true }, { status: 200 });
+    return new NextResponse(null, { status: 200 });
   } catch (error) {
-    console.error("Error procesando webhook de MP:", error);
-    // MP espera un 200 aunque haya error, para no reintentar
-    return NextResponse.json({ received: true }, { status: 200 });
+    return new NextResponse(null, { status: 200 });
   }
 }

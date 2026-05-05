@@ -55,6 +55,8 @@ export async function createPreference(
         failure: `${process.env.APP_URL}/api/payments/callback/mercadopago`,
         pending: `${process.env.APP_URL}/api/payments/callback/mercadopago`,
       },
+      statement_descriptor:"Unihousing",
+      notification_url: `${process.env.APP_URL}/api/payments/webhooks/mercadopago`,
       auto_return: "approved",
       metadata: {
         payment_id: paymentId,
