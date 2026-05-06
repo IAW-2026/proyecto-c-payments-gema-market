@@ -9,32 +9,42 @@ const Processing = () => {
   const paymentId = params.paymentId as string;
 
   useEffect(() => {
-    // Polling: consultar estado del pago cada 3 segundos
-    const interval = setInterval(async () => {
+    let isMounted = true;
+
+    const checkStatus = async () => {
       try {
         const res = await fetch(`/api/payments/ordenes-de-pago/${paymentId}`);
-        if (!res.ok) return;
+        if (!res.ok || !isMounted) return;
         const data = await res.json();
 
         if (data.status === "approved") {
-          clearInterval(interval);
           router.push(`/payments/checkout/${paymentId}/success`);
         } else if (data.status === "rejected" || data.status === "cancelled") {
-          clearInterval(interval);
           router.push(`/payments/checkout/${paymentId}/failed`);
         }
       } catch {
         // Silenciar errores de red en polling
       }
-    }, 3000);
+    };
+
+    // Esperar 2.5s antes de la primera verificación para dar tiempo al webhook
+    const initialCheck = setTimeout(() => {
+      if (isMounted) checkStatus();
+    }, 2500);
+
+    // Polling cada 5 segundos (menos agresivo)
+    const interval = setInterval(() => {
+      if (isMounted) checkStatus();
+    }, 5000);
 
     // Timeout de seguridad: después de 60s, ir a failed
     const timeout = setTimeout(() => {
-      clearInterval(interval);
-      router.push(`/payments/checkout/${paymentId}/failed`);
+      if (isMounted) router.push(`/payments/checkout/${paymentId}/failed`);
     }, 60000);
 
     return () => {
+      isMounted = false;
+      clearTimeout(initialCheck);
       clearInterval(interval);
       clearTimeout(timeout);
     };

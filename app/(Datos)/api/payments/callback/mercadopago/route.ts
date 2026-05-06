@@ -2,8 +2,7 @@
  * Callback de Mercado Pago — GET /api/payments/callback/mercadopago
  *
  * Punto único de retorno para todos los redirects de MP.
- * Lee external_reference y collection_status de los query params
- * y redirige a la vista correcta. El webhook maneja la actualización en BD.
+ * Redirige siempre a processing para que el polling espere la actualización del webhook en BD.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -19,26 +18,13 @@ export async function GET(request: NextRequest) {
   appUrl = appUrl.replace(/\/$/, ""); // Remover barra final si existe
 
   const paymentId = searchParams.get("external_reference");
-  const status =
-    searchParams.get("collection_status") ?? searchParams.get("status");
 
   if (!paymentId) {
     return NextResponse.redirect(`${appUrl}/payments`);
   }
 
-  if (status === "approved") {
-    return NextResponse.redirect(
-      `${appUrl}/payments/checkout/${paymentId}/success`,
-    );
-  }
-
-  if (status === "pending" || status === "in_process") {
-    return NextResponse.redirect(
-      `${appUrl}/payments/checkout/${paymentId}/processing`,
-    );
-  }
-
+  // Siempre redirigir a processing: el polling consultará el estado real en BD (actualizado por webhook)
   return NextResponse.redirect(
-    `${appUrl}/payments/checkout/${paymentId}/failed`,
+    `${appUrl}/payments/checkout/${paymentId}/processing`,
   );
 }
