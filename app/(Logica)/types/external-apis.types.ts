@@ -7,7 +7,7 @@
 export type OkResponse = { ok: true };
 
 // ------------------------------
-// Seller App (consumido por Payments)
+// Seller App 
 // ------------------------------
 
 export type ReserveProductRequest = {
@@ -37,7 +37,7 @@ export type PaymentConfirmedSellerRequest = {
 };
 
 // ------------------------------
-// Buyer App (consumido por Payments)
+// Buyer App 
 // ------------------------------
 
 export type PaymentConfirmedBuyerRequest = {
@@ -62,7 +62,7 @@ export type PaymentRejectedBuyerRequest = {
 };
 
 // ------------------------------
-// Shipping App (consumido por Payments)
+// Shipping App 
 // ------------------------------
 
 export type ReserveQuoteRequest = {

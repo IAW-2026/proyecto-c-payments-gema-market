@@ -36,8 +36,50 @@ export function mapRejectReason(detail: string | null | undefined): string {
 
 // ─── Cálculos ───────────────────────────────────────────────────────
 
+/**
+ * Redondea un número a dos decimales.
+ * 
+ * @param value - El número a redondear.
+ * @returns El número redondeado a dos decimales.
+ */
+export function round2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
 /** Calcula la fee de plataforma basada en PLATFORM_FEE_RATE (default 0.05) */
 export function calculateFee(totalAmount: number): number {
   const rate = Number(process.env.PLATFORM_FEE_RATE) || 0.05;
-  return Math.round(totalAmount * rate * 100) / 100;
+  return round2(totalAmount * rate);
+}
+
+/**
+ * Distribuye una comisión total de forma proporcional entre varias órdenes basándose en su monto.
+ * Si el monto total es cero, la distribuye equitativamente. Asegura que la suma de las partes
+ * sea exactamente igual al total mediante el ajuste en el último elemento.
+ * 
+ * @param totalFee - La comisión total a distribuir.
+ * @param items - Lista de elementos que contienen un monto (amount).
+ * @returns Un array de números con la comisión asignada a cada elemento en el mismo orden.
+ */
+export function splitFee(totalFee: number, items: { amount?: number }[]): number[] {
+  if (!items.length) return [];
+  
+  const totalAmount = items.reduce((s, o) => s + (o.amount ?? 0), 0);
+  
+  if (totalAmount <= 0) {
+    const base = round2(totalFee / items.length);
+    const fees = items.map(() => base);
+    fees[fees.length - 1] = round2(
+      totalFee - fees.slice(0, -1).reduce((s, f) => s + f, 0),
+    );
+    return fees;
+  }
+
+  const fees = items.map((o, idx) => {
+    if (idx === items.length - 1) return 0; // Se calcula por diferencia al final
+    return round2((totalFee * (o.amount ?? 0)) / totalAmount);
+  });
+  
+  fees[fees.length - 1] = round2(totalFee - fees.reduce((s, f) => s + f, 0));
+  return fees;
 }

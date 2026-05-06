@@ -21,35 +21,13 @@ import {
   releaseQuoteReservation,
   reserveQuote,
 } from "@/app/(Logica)/integrations/shipping.client";
+import { round2, splitFee } from "@/app/lib/util";
 
 export type ReservationOrder = Pick<
   OrderItem,
   "orderId" | "productId" | "quantity" | "quoteId" | "amount"
 >;
 
-function round2(value: number): number {
-  return Math.round(value * 100) / 100;
-}
-
-function splitFee(totalFee: number, orders: ReservationOrder[]): number[] {
-  if (!orders.length) return [];
-  const totalAmount = orders.reduce((s, o) => s + (o.amount ?? 0), 0);
-  if (totalAmount <= 0) {
-    const base = round2(totalFee / orders.length);
-    const fees = orders.map(() => base);
-    fees[fees.length - 1] = round2(
-      totalFee - fees.slice(0, -1).reduce((s, f) => s + f, 0),
-    );
-    return fees;
-  }
-
-  const fees = orders.map((o, idx) => {
-    if (idx === orders.length - 1) return 0;
-    return round2((totalFee * (o.amount ?? 0)) / totalAmount);
-  });
-  fees[fees.length - 1] = round2(totalFee - fees.reduce((s, f) => s + f, 0));
-  return fees;
-}
 
 export async function reserveExternalResources(params: {
   buyerId: string;

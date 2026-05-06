@@ -1,6 +1,4 @@
-/**
- * Wrapper HTTP JSON minimalista para integraciones entre apps.
- */
+
 
 export class HttpError extends Error {
   readonly status: number;
