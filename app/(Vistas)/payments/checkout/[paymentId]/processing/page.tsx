@@ -11,6 +11,17 @@ const Processing = () => {
   useEffect(() => {
     let isMounted = true;
 
+    
+    // Esperar 2.5s antes de la primera verificación para dar tiempo al webhook
+    const initialCheck = setTimeout(() => {
+      if (isMounted) checkStatus();
+    }, 2500);
+    
+    // Polling cada 5 segundos (menos agresivo)
+    const interval = setInterval(() => {
+      if (isMounted) checkStatus();
+    }, 5000);
+    
     const checkStatus = async () => {
       try {
         const res = await fetch(`/api/payments/ordenes-de-pago/${paymentId}`);
@@ -26,17 +37,7 @@ const Processing = () => {
         // Silenciar errores de red en polling
       }
     };
-
-    // Esperar 2.5s antes de la primera verificación para dar tiempo al webhook
-    const initialCheck = setTimeout(() => {
-      if (isMounted) checkStatus();
-    }, 2500);
-
-    // Polling cada 5 segundos (menos agresivo)
-    const interval = setInterval(() => {
-      if (isMounted) checkStatus();
-    }, 5000);
-
+    
     // Timeout de seguridad: después de 60s, ir a failed
     const timeout = setTimeout(() => {
       if (isMounted) router.push(`/payments/checkout/${paymentId}/failed`);

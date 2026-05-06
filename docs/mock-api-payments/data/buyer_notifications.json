@@ -8,7 +8,7 @@
         "order_id": "ord_01HXYZAPPROVED",
         "mp_payment_id": "1234567890",
         "status": "approved",
-        "amount": 18500.00,
+        "amount": 18500,
         "currency": "ARS",
         "paid_at": "2026-04-17T14:32:00Z"
       }
@@ -33,5 +33,51 @@
     "dispute_id": "dsp_01HXYZOPEN0001",
     "resolution": "refunded",
     "resolved_at": "2026-04-22T09:00:00Z"
+  },
+  {
+    "payment_id": "pay_01KQYXEJR0P4DSDK2FVYHMSPB2",
+    "event": "pago-confirmado",
+    "received_at": "2026-05-06T15:11:11.772Z",
+    "orders": [
+      {
+        "order_id": "ORD-003",
+        "mp_payment_id": "157220082255",
+        "status": "approved",
+        "amount": 2500,
+        "currency": "ARS",
+        "paid_at": "2026-05-06T15:11:10.891Z"
+      },
+      {
+        "order_id": "ORD-004",
+        "mp_payment_id": "157220082255",
+        "status": "approved",
+        "amount": 1200,
+        "currency": "ARS",
+        "paid_at": "2026-05-06T15:11:10.891Z"
+      }
+    ]
+  },
+  {
+    "payment_id": "pay_01KQYXEJR0P4DSDK2FVYHMSPB2",
+    "event": "pago-confirmado",
+    "received_at": "2026-05-06T15:11:11.772Z",
+    "orders": [
+      {
+        "order_id": "ORD-003",
+        "mp_payment_id": "157220082255",
+        "status": "approved",
+        "amount": 2500,
+        "currency": "ARS",
+        "paid_at": "2026-05-06T15:11:10.895Z"
+      },
+      {
+        "order_id": "ORD-004",
+        "mp_payment_id": "157220082255",
+        "status": "approved",
+        "amount": 1200,
+        "currency": "ARS",
+        "paid_at": "2026-05-06T15:11:10.895Z"
+      }
+    ]
   }
 ]

@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Payment } from "mercadopago";
 import mercadoPagoClient from "@/app/lib/mercadopago";
-import { updateOrdenDePagoStatus } from "@/app/(Logica)/services/ordenes-de-pago.service";
+import {
+  getOrdenDePagoById,
+  updateOrdenDePagoStatus,
+} from "@/app/(Logica)/services/ordenes-de-pago.service";
 import { createTransaccion } from "@/app/(Logica)/services/transacciones.service";
 import type { PaymentStatus } from "@/app/(Logica)/types/payments.types";
+import {
+  notifyApproved,
+  notifyRejected,
+} from "@/app/(Logica)/services/external-sync.service";
 
 const paymentApi = new Payment(mercadoPagoClient);
 
@@ -49,6 +56,9 @@ export async function POST(request: NextRequest) {
 
     const paymentId = mpPayment.external_reference;
 
+    const prevOrden = await getOrdenDePagoById(paymentId);
+    const prevStatus = prevOrden?.status;
+
     const statusMap: Record<string, PaymentStatus> = {
       approved: "approved",
       in_process: "in_process",
@@ -63,7 +73,7 @@ export async function POST(request: NextRequest) {
     const internalStatus: PaymentStatus =
       statusMap[mpPayment.status ?? ""] ?? "pending";
 
-    await updateOrdenDePagoStatus({
+    const updatedOrden = await updateOrdenDePagoStatus({
       paymentId,
       status: internalStatus,
       mpPaymentId,
@@ -80,6 +90,17 @@ export async function POST(request: NextRequest) {
       eventType: body.action ?? eventType,
       payloadJson: payloadToSave,
     });
+
+    // Side-effects inter-app (best-effort). Evitar duplicar si el status no cambio.
+    if (prevStatus !== internalStatus) {
+      if (internalStatus === "approved") {
+        await notifyApproved({ orden: updatedOrden });
+      }
+
+      if (internalStatus === "rejected" || internalStatus === "cancelled") {
+        await notifyRejected({ orden: updatedOrden });
+      }
+    }
 
     return new NextResponse(null, { status: 200 });
   } catch (error) {
