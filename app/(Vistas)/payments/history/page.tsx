@@ -10,6 +10,7 @@ function mapToHistoryTransaction(orden: OrdenDePago): HistoryTransaction {
 
   return {
     id: orden.mpPaymentId ?? orden.id,
+    paymentId: orden.id,
     date: formatDate(orden.paidAt ?? orden.createdAt),
     desc: `Pedido ${orden.orders[0]?.orderId ?? ""}`,
     amount: -Number(orden.totalAmount),

@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/app/(Vistas)/payments/shared/components";
-const PayShell = ({ children, title, back }: any) => {
+const PayShell = ({ children, title, back, rightSlot }: any) => {
   const router = useRouter();
 
   return (
@@ -19,9 +19,11 @@ const PayShell = ({ children, title, back }: any) => {
             </button>
           )}
           <div className="text-sm font-semibold flex-1">{title}</div>
-          <p className="text-[11px] text-ink-3 font-mono shrink-0">
-            UniHousing
-          </p>
+          {rightSlot ?? (
+            <p className="text-[11px] text-ink-3 font-mono shrink-0">
+              UniHousing
+            </p>
+          )}
         </div>
         <div className="flex-1 flex flex-col">{children}</div>
       </div>
