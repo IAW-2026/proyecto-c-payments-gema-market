@@ -17,11 +17,19 @@ export default function SignUpPage() {
             Registrate en la plataforma de pagos de UniHousing
           </p>
         </div>
-        <SignUp
-          fallbackRedirectUrl="/payments/history"
-          signInFallbackRedirectUrl="/payments/history"
-          signInUrl="/sign-in"
-        />
+        <div className="flex justify-center">
+          <SignUp
+            fallbackRedirectUrl="/payments/history"
+            signInFallbackRedirectUrl="/payments/history"
+            signInUrl="/sign-in"
+            appearance={{
+              elements: {
+                header: "hidden",
+                card: "pt-8",
+              },
+            }}
+          />
+        </div>
       </div>
     </div>
   );

@@ -6,8 +6,7 @@ import { append } from "@/app/(Datos)/mock/storage";
 /**
  * GET /api/payments/trigger
  * Simula una compra aleatoria disparando el flujo completo de creación de órdenes.
- * Antes de disparar, crea los registros necesarios en la BD y en el storage del mock
- * para que las validaciones de reserva no fallen.
+ * Reutiliza usuarios existentes de la base de datos para simular compras de usuarios reales.
  */
 export async function GET() {
   try {
@@ -16,41 +15,49 @@ export async function GET() {
       throw new Error("APP_URL no configurada en el entorno.");
     }
 
-    // 1. Generar datos aleatorios
-    const buyerId = generateUlid("usr");
+    // 0. Obtener usuarios existentes para reutilizarlos
+    let users = await prisma.usuario.findMany();
     
-    // Crear comprador en la BD para que exista en el sistema
-    await prisma.usuario.create({
-      data: {
-        id: buyerId,
-        clerkUserId: `clerk_${buyerId}`,
-        email: `${buyerId}@example.com`,
-        fullName: `Comprador Simulado ${buyerId.substring(0, 5)}`,
+    if (users.length === 0) {
+      // Si no hay usuarios, creamos un par de base para que el trigger funcione siempre
+      const baseUsers = [];
+      for (let i = 0; i < 2; i++) {
+        const id = generateUlid("usr");
+        const u = await prisma.usuario.create({
+          data: {
+            id,
+            clerkUserId: `clerk_seed_${id.substring(0, 8)}`,
+            email: `test_${i}@example.com`,
+            fullName: i === 0 ? "Comprador de Prueba" : "Vendedor de Prueba",
+          }
+        });
+        baseUsers.push(u);
       }
-    });
+      users = baseUsers;
+    }
 
+    const getRandomUser = () => users[Math.floor(Math.random() * users.length)];
+
+    // 1. Generar datos aleatorios de compra
+    const buyer = getRandomUser();
+    const buyerId = buyer.id;
+    
     const numOrders = Math.floor(Math.random() * 3) + 1; // 1 a 3 órdenes
     const orders = [];
 
     for (let i = 0; i < numOrders; i++) {
       const quantity = Math.floor(Math.random() * 2) + 1; // 1 a 2 unidades
       const unitPrice = Math.floor(Math.random() * 200) + 50; // 50 a 250 ARS
+      
       const productId = generateUlid("prod");
-      const sellerId = generateUlid("usr");
       const orderId = generateUlid("ord");
-      const hasQuote = Math.random();
-
-      // Crear vendedor en la BD
-      await prisma.usuario.create({
-        data: {
-          id: sellerId,
-          clerkUserId: `clerk_${sellerId}`,
-          email: `${sellerId}@example.com`,
-          fullName: `Vendedor Simulado ${sellerId.substring(0, 5)}`,
-        }
-      });
+      const seller = getRandomUser();
+      const sellerId = seller.id;
+      
+      const hasQuote = Math.random() > 0.5;
 
       // Crear producto en el storage del mock de Seller App
+      // El producto debe existir en el mock para que la reserva no falle
       await append("products", {
         product_id: productId,
         seller_id: sellerId,
@@ -100,7 +107,6 @@ export async function GET() {
     });
 
     if (!response.ok) {
-      // Intentar obtener el JSON de error, si falla obtener texto
       let errorData;
       try {
         errorData = await response.json();
@@ -118,7 +124,7 @@ export async function GET() {
     const result = await response.json();
 
     return NextResponse.json({
-      message: "Trigger ejecutado con éxito. Se crearon usuarios y productos aleatorios antes del flujo.",
+      message: "Trigger ejecutado con éxito. Se reutilizaron usuarios existentes y se generaron items aleatorios.",
       simulated_payload: payload,
       api_response: result,
       checkout_url: result.checkout_url

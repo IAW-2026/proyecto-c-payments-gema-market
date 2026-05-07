@@ -1,11 +1,13 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
 import { PayShell } from "@/app/(Vistas)/payments/components/PayShell";
-import { Card, Icon, Pill, fmtARS } from "@/app/(Vistas)/payments/shared/components";
+import { Card, Icon, Pill, Button, fmtARS } from "@/app/(Vistas)/payments/shared/components";
 
 export interface HistoryTransaction {
   id: string;
+  paymentId: string;
   date: string;
   desc: string;
   amount: number;
@@ -22,6 +24,7 @@ const FILTERS = ["Todos", "Compras", "Fallidas", "Pendientes"];
 const HistoryView = ({ transactions }: HistoryViewProps) => {
   const [activeFilter, setActiveFilter] = useState("Todos");
   const { signOut } = useClerk();
+  const router = useRouter();
 
   const filteredTransactions = transactions.filter((t) => {
     if (activeFilter === "Todos") return true;
@@ -80,6 +83,15 @@ const HistoryView = ({ transactions }: HistoryViewProps) => {
                 <div className={`font-bold text-sm ${amountCls}`}>
                   {isPos ? "+" : ""}{fmtARS(Math.abs(t.amount))}
                 </div>
+                {pending && (
+                  <Button
+                    size="sm"
+                    variant="soft"
+                    onClick={() => router.push(`/payments/checkout/${t.paymentId}/methods`)}
+                  >
+                    Ir a pagar
+                  </Button>
+                )}
               </div>
             );
           })}
