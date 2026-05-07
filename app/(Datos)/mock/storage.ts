@@ -9,7 +9,6 @@ export type StorageName =
   | "quotes";
 
 const DATA_DIR = path.join(process.cwd(), "app","(Datos)", "mock", "data");
-console.log('DATA_DIR', DATA_DIR);
 const queues = new Map<string, Promise<unknown>>();
 
 function filePath(name: StorageName): string {

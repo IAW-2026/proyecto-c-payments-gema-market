@@ -1,10 +1,13 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useClerk } from "@clerk/nextjs";
 import { PayShell } from "@/app/(Vistas)/payments/components/PayShell";
-import { Card, Icon, Pill, fmtARS } from "@/app/(Vistas)/payments/shared/components";
+import { Card, Icon, Pill, Button, fmtARS } from "@/app/(Vistas)/payments/shared/components";
 
 export interface HistoryTransaction {
   id: string;
+  paymentId: string;
   date: string;
   desc: string;
   amount: number;
@@ -20,6 +23,8 @@ const FILTERS = ["Todos", "Compras", "Fallidas", "Pendientes"];
 
 const HistoryView = ({ transactions }: HistoryViewProps) => {
   const [activeFilter, setActiveFilter] = useState("Todos");
+  const { signOut } = useClerk();
+  const router = useRouter();
 
   const filteredTransactions = transactions.filter((t) => {
     if (activeFilter === "Todos") return true;
@@ -30,7 +35,19 @@ const HistoryView = ({ transactions }: HistoryViewProps) => {
   });
 
   return (
-    <PayShell title="Historial de pagos" back="/">
+    <PayShell
+      title="Historial de pagos"
+      back="/"
+      rightSlot={
+        <button
+          onClick={() => signOut({ redirectUrl: "/sign-in" })}
+          className="w-9 h-9 rounded-full bg-bone flex items-center justify-center shrink-0 hover:bg-danger/10 transition-colors"
+          title="Cerrar sesión"
+        >
+          <Icon name="logout" size={16} />
+        </button>
+      }
+    >
       <div className="p-4 min-[600px]:p-5 lgx:p-6">
         <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
           {FILTERS.map((f) => (
@@ -66,6 +83,15 @@ const HistoryView = ({ transactions }: HistoryViewProps) => {
                 <div className={`font-bold text-sm ${amountCls}`}>
                   {isPos ? "+" : ""}{fmtARS(Math.abs(t.amount))}
                 </div>
+                {pending && (
+                  <Button
+                    size="sm"
+                    variant="soft"
+                    onClick={() => router.push(`/payments/checkout/${t.paymentId}/methods`)}
+                  >
+                    Ir a pagar
+                  </Button>
+                )}
               </div>
             );
           })}
