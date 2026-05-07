@@ -7,6 +7,7 @@ import prisma from "@/app/lib/prisma";
 import { generateUlid } from "@/app/lib/ulid";
 import type { OrderItem, PaymentStatus } from "@/app/(Logica)/types/payments.types";
 import type { Prisma } from "@prisma/client";
+import { calculateFee } from "@/app/lib/util";
 
 // ─── Tipos de entrada ───────────────────────────────────────────────
 
@@ -134,4 +135,56 @@ export async function getOrdenesDePagoByBuyer(
   });
 
   return rows.map((r) => ({ ...r, orders: r.orders as unknown as OrderItem[], status: r.status as PaymentStatus }));
+}
+
+/**
+ * Obtiene las deudas de la plataforma con un vendedor específico.
+ * Solo considera órdenes con estado "approved".
+ */
+export async function getDebtsBySeller(sellerId: string, startDate?: Date) {
+  const rows = await prisma.ordenDePago.findMany({
+    where: {
+      status: "approved",
+      ...(startDate && {
+        createdAt: {
+          gte: startDate,
+        },
+      }),
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const sellerDebts = [];
+  let totalDebt = 0;
+
+  for (const row of rows) {
+    // orders es un Json (array de OrderItem)
+    const orders = row.orders as unknown as OrderItem[];
+    const sellerItems = orders.filter((o) => o.sellerId === sellerId);
+
+    for (const item of sellerItems) {
+      const itemAmount = item.amount;
+      const itemFee = calculateFee(itemAmount);
+      const netAmount = itemAmount - itemFee;
+
+      sellerDebts.push({
+        paymentId: row.id,
+        orderId: item.orderId,
+        productId: item.productId,
+        amount: itemAmount,
+        fee: itemFee,
+        netAmount: netAmount,
+        currency: row.currency,
+        date: row.createdAt,
+      });
+
+      totalDebt += netAmount;
+    }
+  }
+
+  return {
+    sellerId,
+    totalDebt: Math.round(totalDebt * 100) / 100,
+    items: sellerDebts,
+  };
 }

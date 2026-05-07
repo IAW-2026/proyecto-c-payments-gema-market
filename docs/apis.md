@@ -472,6 +472,31 @@ Documentar cada endpoint que una app expone para ser consumido por otra app del 
 
 Estados soportados (mapeo Mercado Pago Sandbox): `pending`, `in_process`, `approved`, `rejected`, `cancelled`, `refunded`, `charged_back`, `in_mediation`.
 
+### `GET /api/payments/debts/:seller_id`
+- **Consumido por**: Seller App.
+- **Descripción**: devuelve la lista de deudas (órdenes pagadas) que la plataforma tiene con un vendedor específico. Permite saber cuánto dinero se le debe transferir al vendedor por sus ventas.
+- **Query params**:
+  - `start_date` — filtrar órdenes a partir de esta fecha (formato ISO 8601).
+- **Response 200**:
+```json
+{
+  "seller_id": "usr_01HXYZ...",
+  "total_debt": 14250.00,
+  "items": [
+    {
+      "payment_id": "pay_01HXYZ...",
+      "order_id": "ord_01HXYZ...",
+      "product_id": "prd_01HXYZ...",
+      "amount": 15000.00,
+      "fee": 750.00,
+      "net_amount": 14250.00,
+      "currency": "ARS",
+      "date": "2026-04-17T14:32:00Z"
+    }
+  ]
+}
+```
+
 ### `POST /api/payments/webhooks/mercadopago`
 - **Consumido por**: Mercado Pago (IPN/Webhook).
 - **Descripción**: recibe notificaciones del estado del pago y actualiza el estado interno. Valida firma con `X-Signature` de MP.

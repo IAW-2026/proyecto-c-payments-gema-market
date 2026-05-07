@@ -11,12 +11,25 @@ import {
 } from "@/app/(Logica)/services/ordenes-de-pago.service";
 import { createPreference } from "@/app/(Logica)/services/mercadopago-preference.service";
 import { calculateFee } from "@/app/lib/util";
+import {
+  releaseExternalResources,
+  reserveExternalResources,
+} from "@/app/(Logica)/services/external-sync.service";
+import { HttpError } from "@/app/(Logica)/integrations/http-json";
 
 /**
  * POST /api/payments/ordenes-de-pago
  * Crea una nueva orden de pago y su preferencia en Mercado Pago.
  */
 export async function POST(request: NextRequest) {
+  let reservationOrders: Array<{
+    orderId: string;
+    productId: string;
+    quantity: number;
+    quoteId?: string;
+    amount: number;
+  }> = [];
+
   try {
     const body: CreateOrdenDePagoRequest = await request.json();
 
@@ -38,10 +51,39 @@ export async function POST(request: NextRequest) {
       quoteId: o.quote?.quote_id,
     }));
 
+    reservationOrders = orderItems.map((o) => ({
+      orderId: o.orderId,
+      productId: o.productId,
+      quantity: o.quantity,
+      quoteId: o.quoteId,
+      amount: o.amount,
+    }));
+
     const totalAmount = orderItems.reduce((sum, o) => sum + o.amount, 0);
     const fee = calculateFee(totalAmount);
 
-    // 1. Persistir la orden de pago (sin preferencia aún, necesitamos el ID real)
+    // 0. Reservas externas (Seller/Shipping). Si falla, propagar status.
+    try {
+      await reserveExternalResources({
+        buyerId: body.buyer_id,
+        orders: reservationOrders,
+      });
+    } catch (e) {
+      if (e instanceof HttpError) {
+        const payload =
+          typeof e.body === "object" && e.body != null
+            ? e.body
+            : { error: e.message };
+        return NextResponse.json(payload, { status: e.status });
+      }
+
+      return NextResponse.json(
+        { error: "Error reservando recursos externos." },
+        { status: 500 },
+      );
+    }
+
+    // 1. Persistir la orden de pago 
     const orden = await createOrdenDePago({
       buyerId: body.buyer_id,
       orders: orderItems,
@@ -71,6 +113,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
     console.error("Error al crear orden de pago:", error);
+
+    // Si ya reservamos, liberar best-effort.
+    if (reservationOrders.length) {
+      try {
+        await releaseExternalResources({ orders: reservationOrders });
+      } catch {
+        // ignore
+      }
+    }
+
     return NextResponse.json(
       { error: "Error interno al crear la orden de pago." },
       { status: 500 },

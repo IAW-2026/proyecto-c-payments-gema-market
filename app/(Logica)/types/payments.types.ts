@@ -84,3 +84,23 @@ export interface GetOrdenDePagoResponse {
   created_at: string;
   paid_at?: string | null;
 }
+// ─── Debts (API saliente) ──────────────────────────────────────────
+
+/** Item individual de deuda para un vendedor */
+export interface SellerDebtItem {
+  payment_id: string;
+  order_id: string;
+  product_id: string;
+  amount: number;
+  fee: number;
+  net_amount: number;
+  currency: string;
+  date: string;
+}
+
+/** Respuesta de deudas para un vendedor */
+export interface SellerDebtsResponse {
+  seller_id: string;
+  total_debt: number;
+  items: SellerDebtItem[];
+}
