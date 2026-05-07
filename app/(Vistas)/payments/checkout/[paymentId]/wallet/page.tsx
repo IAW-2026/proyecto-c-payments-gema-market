@@ -15,7 +15,7 @@ export default async function WalletPage({
   return (
     <WalletBrickView
       paymentId={orden.id}
-      totalAmount={orden.totalAmount}
+      totalAmount={Number(orden.totalAmount)}
       preferenceId={orden.mpPreferenceId ?? ""}
     />
   );

@@ -1,7 +1,11 @@
 /**
  * Tipos compartidos para la Payments App.
  * Alineados con el schema de Prisma y los contratos de API (docs/apis.md).
- * Convención: snake_case en JSON de API, camelCase en código TS interno.
+ * Convencion: snake_case en JSON de API, camelCase en codigo TS interno.
+ *
+ * Nota: OrdenDePago y Transaccion usan los tipos inferidos de Prisma directamente.
+ * Solo se definen aqui tipos que no existen en el schema (enums de dominio,
+ * estructuras JSONB, requests/responses de API).
  */
 
 // ─── Enums ──────────────────────────────────────────────────────────
@@ -27,31 +31,6 @@ export interface OrderItem {
   quoteId?: string;
   amount: number;
   quantity: number;
-}
-
-/** Orden de pago — entidad principal */
-export interface OrdenDePagoDTO {
-  id: string;
-  buyerId: string;
-  orders: OrderItem[];
-  totalAmount: number;
-  fee: number;
-  currency: string;
-  status: PaymentStatus;
-  mpPreferenceId?: string | null;
-  mpPaymentId?: string | null;
-  mpStatusDetail?: string | null;
-  createdAt: Date;
-  paidAt?: Date | null;
-}
-
-/** Transacción (evento de Mercado Pago) */
-export interface TransaccionDTO {
-  id: string;
-  paymentId: string;
-  eventType: string;
-  payloadJson: Record<string, unknown>;
-  receivedAt: Date;
 }
 
 
@@ -104,4 +83,24 @@ export interface GetOrdenDePagoResponse {
   mp_status_detail?: string | null;
   created_at: string;
   paid_at?: string | null;
+}
+// ─── Debts (API saliente) ──────────────────────────────────────────
+
+/** Item individual de deuda para un vendedor */
+export interface SellerDebtItem {
+  payment_id: string;
+  order_id: string;
+  product_id: string;
+  amount: number;
+  fee: number;
+  net_amount: number;
+  currency: string;
+  date: string;
+}
+
+/** Respuesta de deudas para un vendedor */
+export interface SellerDebtsResponse {
+  seller_id: string;
+  total_debt: number;
+  items: SellerDebtItem[];
 }

@@ -1,16 +1,13 @@
 /**
  * Servicio de Órdenes de Pago.
  * Encapsula las consultas Prisma para la entidad OrdenDePago.
- * Principio: Single Responsibility — solo maneja persistencia de órdenes de pago.
  */
 
 import prisma from "@/app/lib/prisma";
 import { generateUlid } from "@/app/lib/ulid";
-import type {
-  OrdenDePagoDTO,
-  OrderItem,
-  PaymentStatus,
-} from "@/app/(Logica)/types/payments.types";
+import type { OrderItem, PaymentStatus } from "@/app/(Logica)/types/payments.types";
+import type { Prisma } from "@prisma/client";
+import { calculateFee } from "@/app/lib/util";
 
 // ─── Tipos de entrada ───────────────────────────────────────────────
 
@@ -31,15 +28,23 @@ export interface UpdateOrdenDePagoStatusParams {
   paidAt?: Date;
 }
 
+// ─── Tipo de salida ─────────────────────────────────────────────────
+
+export type OrdenDePago = Omit<Prisma.OrdenDePagoGetPayload<Record<string, never>>, "orders" | "status"> & {
+  orders: OrderItem[];
+  status: PaymentStatus;
+};
+
 // ─── Servicio ───────────────────────────────────────────────────────
 
 /**
  * Crea una nueva orden de pago en la base de datos.
  */
 export async function createOrdenDePago(
-  params: CreateOrdenDePagoParams
-): Promise<OrdenDePagoDTO> {
-  const { buyerId, orders, totalAmount, fee, currency, mpPreferenceId } = params;
+  params: CreateOrdenDePagoParams,
+): Promise<OrdenDePago> {
+  const { buyerId, orders, totalAmount, fee, currency, mpPreferenceId } =
+    params;
 
   const row = await prisma.ordenDePago.create({
     data: {
@@ -54,15 +59,15 @@ export async function createOrdenDePago(
     },
   });
 
-  return mapRowToDTO(row);
+  return { ...row, orders: row.orders as unknown as OrderItem[], status: row.status as PaymentStatus };
 }
 
 /**
  * Actualiza el estado de una orden de pago existente.
  */
 export async function updateOrdenDePagoStatus(
-  params: UpdateOrdenDePagoStatusParams
-): Promise<OrdenDePagoDTO> {
+  params: UpdateOrdenDePagoStatusParams,
+): Promise<OrdenDePago> {
   const { paymentId, status, mpPaymentId, mpStatusDetail, paidAt } = params;
 
   const row = await prisma.ordenDePago.update({
@@ -75,78 +80,111 @@ export async function updateOrdenDePagoStatus(
     },
   });
 
-  return mapRowToDTO(row);
+  return { ...row, orders: row.orders as unknown as OrderItem[], status: row.status as PaymentStatus };
 }
 
 /**
  * Obtiene todas las órdenes de pago.
  */
-export async function getOrdenesDePago(): Promise<OrdenDePagoDTO[]> {
-
+export async function getOrdenesDePago(): Promise<OrdenDePago[]> {
   const rows = await prisma.ordenDePago.findMany({
     orderBy: { createdAt: "desc" },
   });
 
-  return rows.map(mapRowToDTO);
+  return rows.map((r) => ({ ...r, orders: r.orders as unknown as OrderItem[], status: r.status as PaymentStatus }));
 }
 
 /**
  * Obtiene una orden de pago por su ID (payment_id).
  */
 export async function getOrdenDePagoById(
-  paymentId: string
-): Promise<OrdenDePagoDTO | null> {
-
+  paymentId: string,
+): Promise<OrdenDePago | null> {
   const row = await prisma.ordenDePago.findUnique({
     where: { id: paymentId },
   });
 
-  return row ? mapRowToDTO(row) : null;
+  return row ? { ...row, orders: row.orders as unknown as OrderItem[], status: row.status as PaymentStatus } : null;
+}
+
+/**
+ * Actualiza el mpPreferenceId de una orden de pago existente.
+ * Se usa después de crear la orden para vincularla con la preferencia de MP.
+ */
+export async function updateOrdenDePagoPreference(
+  paymentId: string,
+  mpPreferenceId: string,
+): Promise<OrdenDePago> {
+  const row = await prisma.ordenDePago.update({
+    where: { id: paymentId },
+    data: { mpPreferenceId },
+  });
+
+  return { ...row, orders: row.orders as unknown as OrderItem[], status: row.status as PaymentStatus };
 }
 
 /**
  * Obtiene las órdenes de pago de un comprador específico.
  */
 export async function getOrdenesDePagoByBuyer(
-  buyerId: string
-): Promise<OrdenDePagoDTO[]> {
-
+  buyerId: string,
+): Promise<OrdenDePago[]> {
   const rows = await prisma.ordenDePago.findMany({
     where: { buyerId },
     orderBy: { createdAt: "desc" },
   });
 
-  return rows.map(mapRowToDTO);
+  return rows.map((r) => ({ ...r, orders: r.orders as unknown as OrderItem[], status: r.status as PaymentStatus }));
 }
 
-// ─── Mapper ─────────────────────────────────────────────────────────
+/**
+ * Obtiene las deudas de la plataforma con un vendedor específico.
+ * Solo considera órdenes con estado "approved".
+ */
+export async function getDebtsBySeller(sellerId: string, startDate?: Date) {
+  const rows = await prisma.ordenDePago.findMany({
+    where: {
+      status: "approved",
+      ...(startDate && {
+        createdAt: {
+          gte: startDate,
+        },
+      }),
+    },
+    orderBy: { createdAt: "desc" },
+  });
 
-function mapRowToDTO(row: {
-  id: string;
-  buyerId: string;
-  orders: unknown;
-  totalAmount: unknown;
-  fee: unknown;
-  currency: string;
-  status: string;
-  mpPreferenceId: string | null;
-  mpPaymentId: string | null;
-  mpStatusDetail: string | null;
-  createdAt: Date;
-  paidAt: Date | null;
-}): OrdenDePagoDTO {
+  const sellerDebts = [];
+  let totalDebt = 0;
+
+  for (const row of rows) {
+    // orders es un Json (array de OrderItem)
+    const orders = row.orders as unknown as OrderItem[];
+    const sellerItems = orders.filter((o) => o.sellerId === sellerId);
+
+    for (const item of sellerItems) {
+      const itemAmount = item.amount;
+      const itemFee = calculateFee(itemAmount);
+      const netAmount = itemAmount - itemFee;
+
+      sellerDebts.push({
+        paymentId: row.id,
+        orderId: item.orderId,
+        productId: item.productId,
+        amount: itemAmount,
+        fee: itemFee,
+        netAmount: netAmount,
+        currency: row.currency,
+        date: row.createdAt,
+      });
+
+      totalDebt += netAmount;
+    }
+  }
+
   return {
-    id: row.id,
-    buyerId: row.buyerId,
-    orders: row.orders as OrderItem[],
-    totalAmount: Number(row.totalAmount),
-    fee: Number(row.fee),
-    currency: row.currency,
-    status: row.status as PaymentStatus,
-    mpPreferenceId: row.mpPreferenceId,
-    mpPaymentId: row.mpPaymentId,
-    mpStatusDetail: row.mpStatusDetail,
-    createdAt: row.createdAt,
-    paidAt: row.paidAt,
+    sellerId,
+    totalDebt: Math.round(totalDebt * 100) / 100,
+    items: sellerDebts,
   };
 }

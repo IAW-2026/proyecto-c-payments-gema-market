@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
 import { generateUlid } from "@/app/lib/ulid";
 import { createPreference } from "@/app/(Logica)/services/mercadopago-preference.service";
+import { updateOrdenDePagoPreference } from "@/app/(Logica)/services/ordenes-de-pago.service";
 
 export async function GET() {
   try {
@@ -48,7 +49,13 @@ export async function GET() {
         id: pay1Id,
         buyerId: user1Id,
         orders: [
-          { orderId: "ORD-001", sellerId: user2Id, productId: "PROD-01", amount: 1500, quantity: 1 },
+          {
+            orderId: "ORD-001",
+            sellerId: user2Id,
+            productId: "PROD-01",
+            amount: 1500,
+            quantity: 1,
+          },
         ],
         totalAmount: 1500,
         fee: 75,
@@ -67,7 +74,13 @@ export async function GET() {
         id: pay2Id,
         buyerId: user1Id,
         orders: [
-          { orderId: "ORD-002", sellerId: user2Id, productId: "PROD-02", amount: 800, quantity: 1 },
+          {
+            orderId: "ORD-002",
+            sellerId: user2Id,
+            productId: "PROD-02",
+            amount: 800,
+            quantity: 1,
+          },
         ],
         totalAmount: 800,
         fee: 40,
@@ -80,25 +93,27 @@ export async function GET() {
 
     // 3c. Orden PENDING con preferencia real de MP (para testing del Wallet Brick)
     const pendingOrderItems = [
-      { orderId: "ORD-003", sellerId: user3Id, productId: "PROD-03", amount: 2500, quantity: 1 },
-      { orderId: "ORD-004", sellerId: user2Id, productId: "PROD-04", amount: 1200, quantity: 2 },
+      {
+        orderId: "ORD-003",
+        sellerId: user3Id,
+        productId: "PROD-03",
+        amount: 2500,
+        quantity: 1,
+      },
+      {
+        orderId: "ORD-004",
+        sellerId: user2Id,
+        productId: "PROD-04",
+        amount: 1200,
+        quantity: 2,
+      },
     ];
-    const pendingTotal = pendingOrderItems.reduce((sum, o) => sum + o.amount, 0);
+    const pendingTotal = pendingOrderItems.reduce(
+      (sum, o) => sum + o.amount,
+      0,
+    );
 
-    // Crear preferencia real en MP
-    let mpPreferenceId: string | null = null;
-    try {
-      const prefResult = await createPreference({
-        paymentId: "seed-temp",
-        items: pendingOrderItems,
-        totalAmount: pendingTotal,
-        currency: "ARS",
-      });
-      mpPreferenceId = prefResult.preferenceId;
-    } catch (err) {
-      console.warn("No se pudo crear preferencia MP en seed (probablemente credenciales de test):", err);
-    }
-
+    // Crear la orden ANTES de la preferencia para usar el ID real como external_reference
     const pay3Id = generateUlid("pay");
     await prisma.ordenDePago.create({
       data: {
@@ -109,9 +124,25 @@ export async function GET() {
         fee: Math.round(pendingTotal * 0.05 * 100) / 100,
         currency: "ARS",
         status: "pending",
-        mpPreferenceId,
+        mpPreferenceId: null,
       },
     });
+
+    // Crear preferencia real en MP con el ID real de la orden
+    try {
+      const prefResult = await createPreference({
+        paymentId: pay3Id,
+        items: pendingOrderItems,
+        totalAmount: pendingTotal,
+        currency: "ARS",
+      });
+      await updateOrdenDePagoPreference(pay3Id, prefResult.preferenceId);
+    } catch (err) {
+      console.warn(
+        "No se pudo crear preferencia MP en seed (probablemente credenciales de test):",
+        err,
+      );
+    }
 
     // ─── 4. Crear transacciones de ejemplo ───────────────────────────
     await prisma.transaccion.createMany({
@@ -126,7 +157,10 @@ export async function GET() {
           id: generateUlid("txn"),
           paymentId: pay1Id,
           eventType: "payment.updated",
-          payloadJson: { action: "payment.updated", data: { id: "123456789", status: "approved" } },
+          payloadJson: {
+            action: "payment.updated",
+            data: { id: "123456789", status: "approved" },
+          },
         },
         {
           id: generateUlid("txn"),
@@ -138,7 +172,10 @@ export async function GET() {
           id: generateUlid("txn"),
           paymentId: pay2Id,
           eventType: "payment.updated",
-          payloadJson: { action: "payment.updated", data: { id: "987654321", status: "rejected" } },
+          payloadJson: {
+            action: "payment.updated",
+            data: { id: "987654321", status: "rejected" },
+          },
         },
       ],
       skipDuplicates: true,
@@ -155,13 +192,13 @@ export async function GET() {
           checkout_url: `/payments/checkout/${pay3Id}/methods`,
         },
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Error al sembrar la BD:", error);
     return NextResponse.json(
       { error: "Ocurrió un error ejecutando el seed.", details: String(error) },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

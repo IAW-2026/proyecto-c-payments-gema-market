@@ -2,7 +2,6 @@
  * Servicio de Preferencias de Mercado Pago.
  *
  * Encapsula la creación de preferencias en MP para el Wallet Brick.
- * Single Responsibility: solo interactúa con la API de preferencias de MP.
  */
 
 import { Preference } from "mercadopago";
@@ -33,7 +32,7 @@ const preference = new Preference(mercadoPagoClient);
  * @returns ID de preferencia e init_point.
  */
 export async function createPreference(
-  params: CreatePreferenceParams
+  params: CreatePreferenceParams,
 ): Promise<PreferenceResult> {
   const { paymentId, items, currency } = params;
 
@@ -52,10 +51,12 @@ export async function createPreference(
       items: mpItems,
       external_reference: paymentId,
       back_urls: {
-        success: `${process.env.APP_URL}/payments/checkout/${paymentId}/success`,
-        failure: `${process.env.APP_URL}/payments/checkout/${paymentId}/failed`,
-        pending: `${process.env.APP_URL}/payments/checkout/${paymentId}/processing`,
+        success: `${process.env.APP_URL}/api/payments/callback/mercadopago`,
+        failure: `${process.env.APP_URL}/api/payments/callback/mercadopago`,
+        pending: `${process.env.APP_URL}/api/payments/callback/mercadopago`,
       },
+      statement_descriptor:"Unihousing",
+      notification_url: `${process.env.APP_URL}/api/payments/webhooks/mercadopago`,
       auto_return: "approved",
       metadata: {
         payment_id: paymentId,

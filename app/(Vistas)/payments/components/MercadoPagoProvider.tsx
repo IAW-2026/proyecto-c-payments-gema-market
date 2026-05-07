@@ -1,7 +1,9 @@
 "use client";
 
 import { initMercadoPago } from "@mercadopago/sdk-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+
+const publicKey = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY;
 
 /**
  * Provider que inicializa el SDK de Mercado Pago en el cliente.
@@ -12,19 +14,16 @@ export function MercadoPagoProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [ready, setReady] = useState(false);
-
   useEffect(() => {
-    const publicKey = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY;
-    if (publicKey) {
-      initMercadoPago(publicKey, { locale: "es-AR" });
-      setReady(true);
-    } else {
+    if (!publicKey) {
       console.error("NEXT_PUBLIC_MP_PUBLIC_KEY no está configurada.");
+      return;
     }
+
+    initMercadoPago(publicKey, { locale: "es-AR" });
   }, []);
 
-  if (!ready) return null;
+  if (!publicKey) return null;
 
   return <>{children}</>;
 }
