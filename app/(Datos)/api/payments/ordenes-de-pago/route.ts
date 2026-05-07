@@ -68,8 +68,12 @@ export async function POST(request: NextRequest) {
         buyerId: body.buyer_id,
         orders: reservationOrders,
       });
-    } catch (e) {
-      if (e instanceof HttpError) {
+    } catch (e: any) {
+      console.error("Error reservando recursos externos:", e);
+      
+      const isHttpError = e && typeof e === 'object' && 'status' in e && 'body' in e;
+
+      if (isHttpError) {
         const payload =
           typeof e.body === "object" && e.body != null
             ? e.body
@@ -78,7 +82,10 @@ export async function POST(request: NextRequest) {
       }
 
       return NextResponse.json(
-        { error: "Error reservando recursos externos." },
+        { 
+          error: "Error reservando recursos externos.",
+          details: e instanceof Error ? e.message : String(e)
+        },
         { status: 500 },
       );
     }
