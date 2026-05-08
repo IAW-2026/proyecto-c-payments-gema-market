@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateUlid } from "@/app/lib/ulid";
 import prisma from "@/app/lib/prisma";
-import { append } from "@/app/(Datos)/mock/storage";
 
 /**
  * GET /api/payments/trigger
@@ -10,9 +9,15 @@ import { append } from "@/app/(Datos)/mock/storage";
  */
 export async function GET() {
   try {
-    const appUrl = process.env.APP_URL;
+    let appUrl = process.env.APP_URL;
     if (!appUrl) {
       throw new Error("APP_URL no configurada en el entorno.");
+    }
+    
+    // Normalizar APP_URL para garantizar que tenga http/https
+    appUrl = appUrl.replace(/\/$/, "");
+    if (!appUrl.startsWith("http://") && !appUrl.startsWith("https://")) {
+      appUrl = appUrl.includes("localhost") ? `http://${appUrl}` : `https://${appUrl}`;
     }
 
     // 0. Obtener usuarios existentes para reutilizarlos
@@ -56,24 +61,12 @@ export async function GET() {
       
       const hasQuote = Math.random() > 0.5;
 
-      // Crear producto en el storage del mock de Seller App
-      // El producto debe existir en el mock para que la reserva no falle
-      await append("products", {
-        product_id: productId,
-        seller_id: sellerId,
-        status: "active",
-        stock: 99
-      });
+      // (Simulación de producto existente, la API mock ya no valida persistencia)
 
       let quoteData = undefined;
       if (hasQuote) {
         const quoteId = generateUlid("qte");
-        // Crear cotización en el storage del mock de Shipping App
-        await append("quotes", {
-          quote_id: quoteId,
-          status: "available",
-          valid_until: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24h
-        });
+        // (Simulación de cotización, la API mock ya no valida persistencia)
         quoteData = {
           quote_id: quoteId,
           shipping_price: Math.floor(Math.random() * 100) + 20,
@@ -108,10 +101,11 @@ export async function GET() {
 
     if (!response.ok) {
       let errorData;
+      const textResponse = await response.text();
       try {
-        errorData = await response.json();
+        errorData = JSON.parse(textResponse);
       } catch {
-        errorData = await response.text();
+        errorData = textResponse;
       }
       
       return NextResponse.json({

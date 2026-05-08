@@ -9,13 +9,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  let appUrl = process.env.APP_URL ?? "http://localhost:3000";
-
-  // Normalizar URL: asegurar que tenga protocolo y sin barra final
-  if (!appUrl.startsWith("http://") && !appUrl.startsWith("https://")) {
-    appUrl = `http://${appUrl}`;
-  }
-  appUrl = appUrl.replace(/\/$/, ""); // Remover barra final si existe
+  
+  // Usar el origen de la request actual (ej: https://app.vercel.app o https://*.ngrok-free.dev)
+  // Esto evita problemas si la variable de entorno estaba mal configurada o faltaba
+  const appUrl = request.nextUrl.origin;
 
   const paymentId = searchParams.get("external_reference");
 

@@ -45,18 +45,26 @@ export async function createPreference(
     currency_id: currency,
   }));
 
+  // Normalizar APP_URL
+  let appUrl = process.env.APP_URL || "http://localhost:3000";
+  appUrl = appUrl.replace(/\/$/, ""); // Quitar barra final si la tiene
+  if (!appUrl.startsWith("http://") && !appUrl.startsWith("https://")) {
+    // Si no tiene protocolo, asumir https salvo que sea localhost
+    appUrl = appUrl.includes("localhost") ? `http://${appUrl}` : `https://${appUrl}`;
+  }
+
   const result = await preference.create({
     body: {
       purpose: "wallet_purchase",
       items: mpItems,
       external_reference: paymentId,
       back_urls: {
-        success: `${process.env.APP_URL}/api/payments/callback/mercadopago`,
-        failure: `${process.env.APP_URL}/api/payments/callback/mercadopago`,
-        pending: `${process.env.APP_URL}/api/payments/callback/mercadopago`,
+        success: `${appUrl}/api/payments/callback/mercadopago`,
+        failure: `${appUrl}/api/payments/callback/mercadopago`,
+        pending: `${appUrl}/api/payments/callback/mercadopago`,
       },
       statement_descriptor:"Unihousing",
-      notification_url: `${process.env.APP_URL}/api/payments/webhooks/mercadopago`,
+      notification_url: `${appUrl}/api/payments/webhooks/mercadopago`,
       auto_return: "approved",
       metadata: {
         payment_id: paymentId,
