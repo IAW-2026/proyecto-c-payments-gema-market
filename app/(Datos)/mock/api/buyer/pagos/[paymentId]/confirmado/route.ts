@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { append } from "@/app/(Datos)/mock/storage";
 
 export async function POST(
   request: NextRequest,
@@ -14,7 +13,7 @@ export async function POST(
     return NextResponse.json({ error: "Bad Request" }, { status: 400 });
   }
 
-  await append("buyer_notifications", {
+  console.log("Notificación recibida en Buyer App (pago confirmado):", {
     payment_id: paymentId,
     event: "pago-confirmado",
     received_at: new Date().toISOString(),

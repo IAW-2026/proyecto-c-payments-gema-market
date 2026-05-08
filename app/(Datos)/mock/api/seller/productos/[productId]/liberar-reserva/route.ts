@@ -1,14 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { load, save } from "@/app/(Datos)/mock/storage";
-
-type ProductReservation = {
-  order_id: string;
-  product_id: string;
-  quantity: number;
-  active?: boolean;
-  reserved_at?: string;
-  released_at?: string;
-};
 
 export async function POST(
   request: NextRequest,
@@ -35,23 +25,10 @@ export async function POST(
     );
   }
 
-  const reservations = await load<ProductReservation>("product_reservations");
-  const idx = reservations.findIndex(
-    (r) => r.order_id === body.order_id && r.product_id === productId && (r.active ?? true),
-  );
-  if (idx === -1) {
-    return NextResponse.json(
-      { error: `NOT FOUND no hay reserva activa order_id=${body.order_id} product_id=${productId}` },
-      { status: 404 },
-    );
-  }
-
-  reservations[idx] = {
-    ...reservations[idx],
-    active: false,
-    released_at: new Date().toISOString(),
-  };
-  await save("product_reservations", reservations);
+  console.log("Simulando liberación exitosa en Seller App:", {
+    product_id: productId,
+    ...body,
+  });
 
   return NextResponse.json({ ok: true }, { status: 200 });
 }
