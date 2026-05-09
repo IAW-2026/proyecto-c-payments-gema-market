@@ -70,7 +70,7 @@ const HistoryView = ({ transactions }: HistoryViewProps) => {
           ))}
         </div>
         <Card padding={0}>
-{filteredTransactions.map((t, i) => {
+          {filteredTransactions.map((t, i) => {
             const isPos = t.amount > 0;
             const failed = t.status === "fail";
             const pending = t.status === "pending";
@@ -82,16 +82,16 @@ const HistoryView = ({ transactions }: HistoryViewProps) => {
               ? `${t.items[0].quantity}x ${t.items[0].productId}`
               : `${totalItems} productos`;
             return (
-              <div key={t.id}>
+              <div key={t.id} className={i < filteredTransactions.length - 1 ? "border-b border-line" : ""}>
                 <div
-                  className={`p-4 flex items-center gap-3.5 ${i < filteredTransactions.length - 1 ? "border-b border-line" : ""} ${failed ? "opacity-60" : "opacity-100"} cursor-pointer`}
+                  className={`p-4 flex items-center gap-3.5 ${failed ? "opacity-60" : "opacity-100"} cursor-pointer`}
                   onClick={() => setExpandedId(isExpanded ? null : t.id)}
                 >
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
                     <Icon name={failed ? "close" : pending ? "clock" : isPos ? "arrowDown" : "arrowUp"} size={16}/>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-medium">{t.desc}</div>
+                  <div className="flex-1 min-w-0 pr-2">
+                    <div className="text-[13px] font-medium truncate" title={t.desc}>{t.desc}</div>
                     <div className="text-[11px] text-ink-3 flex gap-1.5 items-center flex-wrap">
                       <span>{t.date}</span><span>·</span><span>{t.method}</span>
                       <span>·</span><span>{summary}</span>
@@ -99,7 +99,7 @@ const HistoryView = ({ transactions }: HistoryViewProps) => {
                       {pending && <Pill size="sm" tone="warn">Pendiente</Pill>}
                     </div>
                   </div>
-                  <div className={`font-bold text-sm ${amountCls}`}>
+                  <div className={`font-bold text-sm shrink-0 text-right ${amountCls}`}>
                     {isPos ? "+" : ""}{fmtARS(Math.abs(t.amount))}
                   </div>
                   <Icon
@@ -109,32 +109,51 @@ const HistoryView = ({ transactions }: HistoryViewProps) => {
                   />
                 </div>
                 {isExpanded && (
-                  <div className="px-4 pb-4 pt-0 border-b border-line bg-[#fafaf8]">
-                    <div className="text-[11px] font-medium text-ink-3 mb-2 uppercase tracking-wide">Detalle</div>
-                    {t.items.map((item, j) => (
-                      <div key={j} className="flex justify-between items-center py-1.5">
-                        <span className="text-[12px] text-ink">
-                          {item.quantity}x {item.productId}
-                        </span>
-                        <span className="text-[12px] text-ink font-medium">
-                          {fmtARS(item.unitPrice * item.quantity)}
-                        </span>
+                  <div className="px-4 pb-4 pt-3 bg-bone/30 border-t border-line">
+                    <div className="text-[11px] font-semibold text-ink-3 mb-3 uppercase tracking-wider">Detalle de la orden</div>
+                    <div className="space-y-2">
+                      {t.items.map((item, j) => (
+                        <div key={j} className="flex justify-between items-center bg-white p-2.5 rounded-lg shadow-sm border border-line/50 gap-2">
+                          <span className="text-[13px] text-ink font-medium flex items-center gap-2 min-w-0 flex-1">
+                            <span className="bg-bone text-ink-2 px-1.5 py-0.5 rounded text-[11px] font-bold shrink-0">{item.quantity}x</span>
+                            <span className="truncate" title={item.productId}>{item.productId}</span>
+                          </span>
+                          <span className="text-[13px] text-ink font-bold shrink-0">
+                            {fmtARS(item.unitPrice * item.quantity)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    {pending && (
+                      <div className="mt-4">
+                        <Button
+                          size="md"
+                          className="w-full justify-center"
+                          onClick={(e: React.MouseEvent) => {
+                            e.stopPropagation();
+                            router.push(`/payments/checkout/${t.paymentId}/methods`);
+                          }}
+                        >
+                          Completar pago
+                        </Button>
                       </div>
-                    ))}
+                    )}
                   </div>
                 )}
                 {pending && !isExpanded && (
-                  <Button
-                    size="sm"
-                    variant="soft"
-                    className="mx-4 mb-3"
-                    onClick={(e: React.MouseEvent) => {
-                      e.stopPropagation();
-                      router.push(`/payments/checkout/${t.paymentId}/methods`);
-                    }}
-                  >
-                    Ir a pagar
-                  </Button>
+                  <div className="px-4 pb-4">
+                    <Button
+                      size="sm"
+                      variant="soft"
+                      className="w-full justify-center"
+                      onClick={(e: React.MouseEvent) => {
+                        e.stopPropagation();
+                        router.push(`/payments/checkout/${t.paymentId}/methods`);
+                      }}
+                    >
+                      Ir a pagar
+                    </Button>
+                  </div>
                 )}
               </div>
             );
