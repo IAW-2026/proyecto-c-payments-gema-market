@@ -21,7 +21,7 @@ export function validateApiKey(request: Request): boolean {
 }
 
 export function apiKeyResponse(): NextResponse {
-  return NextResponse.json({ error: "Unauthorized, el hash es: " + getApiKeyHash() }, { status: 401 });
+  return NextResponse.json({ error: "Unauthorized " }, { status: 401 });
 }
 
 import { NextResponse } from "next/server";
