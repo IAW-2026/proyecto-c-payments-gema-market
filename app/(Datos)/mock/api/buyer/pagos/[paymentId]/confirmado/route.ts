@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { validateApiKey } from "@/app/(Logica)/integrations/api-key";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ paymentId: string }> },
 ) {
   const { paymentId } = await params;
+
+  if (!validateApiKey(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   let body: Record<string, unknown>;
   try {

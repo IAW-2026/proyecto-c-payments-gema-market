@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOrdenDePagoById } from "@/app/(Logica)/services/ordenes-de-pago.service";
 import type { GetOrdenDePagoResponse } from "@/app/(Logica)/types/payments.types";
+import { validateApiKey, apiKeyResponse } from "@/app/(Logica)/integrations/api-key";
+
+function authCheck(request: NextRequest): NextResponse | null {
+  if (!validateApiKey(request)) return apiKeyResponse();
+  return null;
+}
 
 /**
  * GET /api/payments/ordenes-de-pago/:paymentId
@@ -8,9 +14,11 @@ import type { GetOrdenDePagoResponse } from "@/app/(Logica)/types/payments.types
  *
  */
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ paymentId: string }> },
 ) {
+  const auth = authCheck(request);
+  if (auth) return auth;
   const { paymentId } = await params;
 
   try {

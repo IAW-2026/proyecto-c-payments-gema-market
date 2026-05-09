@@ -1,5 +1,3 @@
-
-
 export class HttpError extends Error {
   readonly status: number;
   readonly body: unknown;
@@ -31,6 +29,11 @@ async function tryReadBody(res: Response): Promise<unknown> {
   }
 }
 
+async function getApiKeyHash(): Promise<string> {
+  const { getApiKeyHash: getHash } = await import("@/app/(Logica)/integrations/api-key");
+  return getHash();
+}
+
 export async function postJson<TReq, TRes>(params: {
   baseUrl: string;
   path: string;
@@ -38,10 +41,12 @@ export async function postJson<TReq, TRes>(params: {
   headers?: Record<string, string>;
 }): Promise<TRes> {
   const url = buildUrl(params.baseUrl, params.path);
+  const apiKeyHash = await getApiKeyHash();
   const res = await fetch(url, {
     method: "POST",
     headers: {
       "content-type": "application/json",
+      "x-api-key-hash": apiKeyHash,
       ...(params.headers ?? {}),
     },
     body: JSON.stringify(params.body),
