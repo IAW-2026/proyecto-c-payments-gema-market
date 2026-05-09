@@ -153,6 +153,7 @@ export async function GET() {
         order_id: oi.orderId,
         seller_id: oi.sellerId,
         product_id: oi.productId,
+        quantity: oi.quantity,
         quote_id: oi.quoteId,
         amount: oi.amount,
       })),

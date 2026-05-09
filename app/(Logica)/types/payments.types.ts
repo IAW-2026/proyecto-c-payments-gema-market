@@ -74,6 +74,7 @@ export interface GetOrdenDePagoResponse {
     order_id: string;
     seller_id: string;
     product_id: string;
+    quantity: number;
     quote_id?: string;
     amount: number;
   }[];

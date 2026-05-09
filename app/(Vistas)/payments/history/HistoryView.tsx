@@ -5,6 +5,12 @@ import { useClerk } from "@clerk/nextjs";
 import { PayShell } from "@/app/(Vistas)/payments/components/PayShell";
 import { Card, Icon, Pill, Button, fmtARS } from "@/app/(Vistas)/payments/shared/components";
 
+export interface HistoryTransactionItem {
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+}
+
 export interface HistoryTransaction {
   id: string;
   paymentId: string;
@@ -13,6 +19,8 @@ export interface HistoryTransaction {
   amount: number;
   method: string;
   status: "ok" | "fail" | "pending";
+  items: HistoryTransactionItem[];
+  currency: string;
 }
 
 export interface HistoryViewProps {
@@ -23,6 +31,7 @@ const FILTERS = ["Todos", "Compras", "Fallidas", "Pendientes"];
 
 const HistoryView = ({ transactions }: HistoryViewProps) => {
   const [activeFilter, setActiveFilter] = useState("Todos");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const { signOut } = useClerk();
   const router = useRouter();
 
@@ -61,33 +70,68 @@ const HistoryView = ({ transactions }: HistoryViewProps) => {
           ))}
         </div>
         <Card padding={0}>
-          {filteredTransactions.map((t, i) => {
+{filteredTransactions.map((t, i) => {
             const isPos = t.amount > 0;
             const failed = t.status === "fail";
             const pending = t.status === "pending";
             const iconBg = failed ? "bg-[#f0d9d1] text-danger" : pending ? "bg-[#f3e4c4] text-warn" : isPos ? "bg-[#dde2c9] text-success" : "bg-bone text-ink-2";
             const amountCls = failed ? "text-ink-3" : pending ? "text-warn" : isPos ? "text-success" : "text-ink";
+            const isExpanded = expandedId === t.id;
+            const totalItems = t.items.length;
+            const summary = totalItems === 1
+              ? `${t.items[0].quantity}x ${t.items[0].productId}`
+              : `${totalItems} productos`;
             return (
-              <div key={t.id} className={`p-4 flex items-center gap-3.5 ${i < filteredTransactions.length - 1 ? "border-b border-line" : ""} ${failed ? "opacity-60" : "opacity-100"}`}>
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${iconBg}`}>
-                  <Icon name={failed ? "close" : pending ? "clock" : isPos ? "arrowDown" : "arrowUp"} size={16}/>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[13px] font-medium">{t.desc}</div>
-                  <div className="text-[11px] text-ink-3 flex gap-1.5 items-center flex-wrap">
-                    <span>{t.date}</span><span>·</span><span>{t.method}</span>
-                    {failed && <Pill size="sm" tone="danger">Fallida</Pill>}
-                    {pending && <Pill size="sm" tone="warn">Pendiente</Pill>}
+              <div key={t.id}>
+                <div
+                  className={`p-4 flex items-center gap-3.5 ${i < filteredTransactions.length - 1 ? "border-b border-line" : ""} ${failed ? "opacity-60" : "opacity-100"} cursor-pointer`}
+                  onClick={() => setExpandedId(isExpanded ? null : t.id)}
+                >
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
+                    <Icon name={failed ? "close" : pending ? "clock" : isPos ? "arrowDown" : "arrowUp"} size={16}/>
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-medium">{t.desc}</div>
+                    <div className="text-[11px] text-ink-3 flex gap-1.5 items-center flex-wrap">
+                      <span>{t.date}</span><span>·</span><span>{t.method}</span>
+                      <span>·</span><span>{summary}</span>
+                      {failed && <Pill size="sm" tone="danger">Fallida</Pill>}
+                      {pending && <Pill size="sm" tone="warn">Pendiente</Pill>}
+                    </div>
+                  </div>
+                  <div className={`font-bold text-sm ${amountCls}`}>
+                    {isPos ? "+" : ""}{fmtARS(Math.abs(t.amount))}
+                  </div>
+                  <Icon
+                    name="chevronDown"
+                    size={14}
+                    className={`shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                  />
                 </div>
-                <div className={`font-bold text-sm ${amountCls}`}>
-                  {isPos ? "+" : ""}{fmtARS(Math.abs(t.amount))}
-                </div>
-                {pending && (
+                {isExpanded && (
+                  <div className="px-4 pb-4 pt-0 border-b border-line bg-[#fafaf8]">
+                    <div className="text-[11px] font-medium text-ink-3 mb-2 uppercase tracking-wide">Detalle</div>
+                    {t.items.map((item, j) => (
+                      <div key={j} className="flex justify-between items-center py-1.5">
+                        <span className="text-[12px] text-ink">
+                          {item.quantity}x {item.productId}
+                        </span>
+                        <span className="text-[12px] text-ink font-medium">
+                          {fmtARS(item.unitPrice * item.quantity)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {pending && !isExpanded && (
                   <Button
                     size="sm"
                     variant="soft"
-                    onClick={() => router.push(`/payments/checkout/${t.paymentId}/methods`)}
+                    className="mx-4 mb-3"
+                    onClick={(e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      router.push(`/payments/checkout/${t.paymentId}/methods`);
+                    }}
                   >
                     Ir a pagar
                   </Button>
