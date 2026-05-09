@@ -31,6 +31,7 @@ export type ReservationOrder = Pick<
 
 export async function reserveExternalResources(params: {
   buyerId: string;
+  buyerName?: string;
   orders: ReservationOrder[];
 }): Promise<void> {
   try {
@@ -41,6 +42,7 @@ export async function reserveExternalResources(params: {
       await reserveProduct(o.productId, {
         order_id: o.orderId,
         buyer_id: params.buyerId,
+        buyer_name: params.buyerName ?? "",
         product_id: o.productId,
         quantity: o.quantity,
       });

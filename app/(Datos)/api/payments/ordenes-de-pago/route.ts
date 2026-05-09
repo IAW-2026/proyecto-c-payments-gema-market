@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
     try {
       await reserveExternalResources({
         buyerId: body.buyer_id,
+        buyerName: body.buyer_name,
         orders: reservationOrders,
       });
     } catch (e: any) {

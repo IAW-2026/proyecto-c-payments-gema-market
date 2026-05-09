@@ -39,6 +39,7 @@ export interface OrderItem {
 /** Body para POST /api/payments/ordenes-de-pago */
 export interface CreateOrdenDePagoRequest {
   buyer_id: string;
+  buyer_name?: string;
   orders: {
     order_id: string;
     seller_id: string;

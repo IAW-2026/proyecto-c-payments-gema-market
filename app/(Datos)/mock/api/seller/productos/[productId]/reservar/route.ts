@@ -9,6 +9,7 @@ export async function POST(
   let body: {
     order_id?: string;
     buyer_id?: string;
+    buyer_name?: string;
     product_id?: string;
     quantity?: number;
   };
