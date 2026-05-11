@@ -67,9 +67,21 @@ El proyecto sigue una organización **MVC (Modelo-Vista-Controlador)** adaptada 
 ```bash
 pnpm dev              # Iniciar servidor de desarrollo
 pnpm prisma:studio    # Explorar la base de datos
-pnpm seed             # Poblar datos iniciales (vía /seed)
 ```
 
----
+### 👑 Rol de Administrador y Pruebas
+El sistema ahora incluye soporte para el rol de **administrador**:
+- El admin cuenta con herramientas de simulación (Trigger) accesibles directamente desde la pantalla de Historial (`/payments/history`).
+- También se puede acceder a la ruta `GET /api/payments/trigger` para disparar el flujo de compras simuladas desde el navegador.
+- Estas herramientas permiten simular interacciones complejas de todo el flujo de pagos sin necesidad de cargar datos manualmente.
+
+## Accesos de prueba
+Las cuentas de prueba para mercado pago se encuentran en `TEST_MP_DATA.txt`, incluyen credenciales de acceso y credenciales de tarjetas de prueba y sus respectivos codigos para aprobar o rechazar la operacion
+
+Para acceder como administrador las credenciales son:
+
+**Usuario**: `payments.admin.unihousing@gmail.com`
+
+**Contraseña**: `adminUNS2026`
 
 
