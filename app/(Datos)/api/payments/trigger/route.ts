@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateUlid } from "@/app/lib/ulid";
 import prisma from "@/app/lib/prisma";
 import { getApiKeyHash } from "@/app/(Logica)/integrations/api-key";
+import { POST as createOrderHandler } from "../ordenes-de-pago/route";
 /**
  * GET /api/payments/trigger
  * Simula una compra aleatoria disparando el flujo completo de creación de órdenes.
@@ -77,9 +78,10 @@ export async function GET(request: NextRequest) {
       return_url: `${appUrl}/payments/history`
     };
 
-    // 2. Realizar el POST a nuestro propio endpoint
+    // 2. Realizar el POST llamando directamente al handler interno para evitar el bloqueo de Vercel Auth
     const apiKey = await getApiKeyHash();
-    const response = await fetch(`${appUrl}/api/payments/ordenes-de-pago`, {
+    
+    const mockRequest = new NextRequest(new URL(`${appUrl}/api/payments/ordenes-de-pago`), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -88,9 +90,12 @@ export async function GET(request: NextRequest) {
       body: JSON.stringify(payload),
     });
 
-    if (!response.ok) {
+    // Llamada directa al handler interno
+    const response = await createOrderHandler(mockRequest);
+
+    if (!response || !response.ok) {
       let errorData;
-      const textResponse = await response.text();
+      const textResponse = response ? await response.text() : "No response";
       try {
         errorData = JSON.parse(textResponse);
       } catch {
@@ -101,7 +106,7 @@ export async function GET(request: NextRequest) {
         message: "Error al disparar la orden de pago",
         payload,
         error: errorData
-      }, { status: response.status });
+      }, { status: response ? response.status : 500 });
     }
 
     const result = await response.json();
