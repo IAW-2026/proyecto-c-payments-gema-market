@@ -19,7 +19,7 @@ export default async function MethodsPage({
     const up = upFallback(o.unitPrice, o.quantity, o.amount);
     const sp = up > 0 ? o.amount - up * o.quantity : 0;
     return {
-      productName: o.productName ?? o.productId,
+      productName: o.productName || "Producto",
       quantity: o.quantity,
       unitPrice: up,
       shippingPrice: sp,

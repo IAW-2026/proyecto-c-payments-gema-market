@@ -13,7 +13,7 @@ function mapToHistoryTransaction(orden: OrdenDePago): HistoryTransaction {
     const sp = up > 0 ? o.amount - up * o.quantity : 0;
     return {
       productId: o.productId,
-      productName: o.productName ?? o.productId,
+      productName: o.productName || "Producto",
       quantity: o.quantity,
       unitPrice: up,
       shippingPrice: sp,
