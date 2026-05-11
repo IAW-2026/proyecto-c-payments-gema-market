@@ -35,6 +35,29 @@ export type OrdenDePago = Omit<Prisma.OrdenDePagoGetPayload<Record<string, never
   status: PaymentStatus;
 };
 
+// ─── Helpers ────────────────────────────────────────────────────────
+
+/**
+ * Parsea el campo `orders` de la DB de forma segura.
+ * El adapter-pg de Prisma puede devolver campos Json como strings
+ * en vez de objetos ya parseados. Este helper maneja ambos casos.
+ */
+function parseOrders(raw: unknown): OrderItem[] {
+  if (typeof raw === "string") {
+    try {
+      return JSON.parse(raw) as OrderItem[];
+    } catch {
+      console.error("Error parseando orders JSON string:", raw);
+      return [];
+    }
+  }
+  if (Array.isArray(raw)) {
+    return raw as OrderItem[];
+  }
+  console.error("orders tiene un tipo inesperado:", typeof raw, raw);
+  return [];
+}
+
 // ─── Servicio ───────────────────────────────────────────────────────
 
 /**
@@ -59,7 +82,7 @@ export async function createOrdenDePago(
     },
   });
 
-  return { ...row, orders: row.orders as unknown as OrderItem[], status: row.status as PaymentStatus };
+  return { ...row, orders: parseOrders(row.orders), status: row.status as PaymentStatus };
 }
 
 /**
@@ -80,7 +103,7 @@ export async function updateOrdenDePagoStatus(
     },
   });
 
-  return { ...row, orders: row.orders as unknown as OrderItem[], status: row.status as PaymentStatus };
+  return { ...row, orders: parseOrders(row.orders), status: row.status as PaymentStatus };
 }
 
 /**
@@ -91,7 +114,7 @@ export async function getOrdenesDePago(): Promise<OrdenDePago[]> {
     orderBy: { createdAt: "desc" },
   });
 
-  return rows.map((r) => ({ ...r, orders: r.orders as unknown as OrderItem[], status: r.status as PaymentStatus }));
+  return rows.map((r) => ({ ...r, orders: parseOrders(r.orders), status: r.status as PaymentStatus }));
 }
 
 /**
@@ -104,7 +127,7 @@ export async function getOrdenDePagoById(
     where: { id: paymentId },
   });
 
-  return row ? { ...row, orders: row.orders as unknown as OrderItem[], status: row.status as PaymentStatus } : null;
+  return row ? { ...row, orders: parseOrders(row.orders), status: row.status as PaymentStatus } : null;
 }
 
 /**
@@ -120,7 +143,7 @@ export async function updateOrdenDePagoPreference(
     data: { mpPreferenceId },
   });
 
-  return { ...row, orders: row.orders as unknown as OrderItem[], status: row.status as PaymentStatus };
+  return { ...row, orders: parseOrders(row.orders), status: row.status as PaymentStatus };
 }
 
 /**
@@ -134,7 +157,7 @@ export async function getOrdenesDePagoByBuyer(
     orderBy: { createdAt: "desc" },
   });
 
-  return rows.map((r) => ({ ...r, orders: r.orders as unknown as OrderItem[], status: r.status as PaymentStatus }));
+  return rows.map((r) => ({ ...r, orders: parseOrders(r.orders), status: r.status as PaymentStatus }));
 }
 
 /**
@@ -158,8 +181,8 @@ export async function getDebtsBySeller(sellerId: string, startDate?: Date) {
   let totalDebt = 0;
 
   for (const row of rows) {
-    // orders es un Json (array de OrderItem)
-    const orders = row.orders as unknown as OrderItem[];
+    // orders es un Json (array de OrderItem) — parseOrders maneja string vs object
+    const orders = parseOrders(row.orders);
     const sellerItems = orders.filter((o) => o.sellerId === sellerId);
 
     for (const item of sellerItems) {

@@ -8,12 +8,21 @@ import {
   fmtARS,
 } from "@/app/(Vistas)/payments/shared/components";
 
+export interface SuccessItem {
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  shippingPrice: number;
+}
+
 export interface SuccessViewProps {
   paymentId: string;
   totalAmount: number;
   orderId: string;
   date: string;
   transactionId: string;
+  items: SuccessItem[];
+  totalShipping: number;
 }
 
 const SuccessView = ({
@@ -22,6 +31,8 @@ const SuccessView = ({
   orderId,
   date,
   transactionId,
+  items,
+  totalShipping,
 }: SuccessViewProps) => {
   const router = useRouter();
   const details = [
@@ -56,6 +67,23 @@ const SuccessView = ({
                 <div className="text-[11px] text-ink-3">
                   Te notificaremos cuando esté en camino
                 </div>
+              </div>
+            </Card>
+            <Card padding={16} className="mb-3.5">
+              <div className="text-[11px] font-semibold text-ink-3 mb-3 uppercase tracking-wider">Resumen del pedido</div>
+              <div className="space-y-1">
+                {items.map((item, i) => (
+                  <div key={i} className="flex justify-between text-[13px]">
+                    <span className="text-ink truncate pr-2">{item.quantity}x {item.productName}</span>
+                    <span className="text-ink font-medium shrink-0">{fmtARS(item.unitPrice * item.quantity)}</span>
+                  </div>
+                ))}
+                {totalShipping > 0 && (
+                  <div className="flex justify-between text-[12px] text-ink-3 pt-1 mt-1 border-t border-line/50">
+                    <span>Envío</span>
+                    <span>{fmtARS(totalShipping)}</span>
+                  </div>
+                )}
               </div>
             </Card>
           </div>

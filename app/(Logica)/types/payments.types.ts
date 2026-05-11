@@ -28,6 +28,8 @@ export interface OrderItem {
   orderId: string;
   sellerId: string;
   productId: string;
+  productName: string;
+  unitPrice: number;
   quoteId?: string;
   amount: number;
   quantity: number;
@@ -39,10 +41,12 @@ export interface OrderItem {
 /** Body para POST /api/payments/ordenes-de-pago */
 export interface CreateOrdenDePagoRequest {
   buyer_id: string;
+  buyer_name?: string;
   orders: {
     order_id: string;
     seller_id: string;
     product_id: string;
+    product_name: string;
     quantity: number;
     unit_price: number;
     quote?: {
@@ -73,6 +77,8 @@ export interface GetOrdenDePagoResponse {
     order_id: string;
     seller_id: string;
     product_id: string;
+    product_name: string;
+    quantity: number;
     quote_id?: string;
     amount: number;
   }[];

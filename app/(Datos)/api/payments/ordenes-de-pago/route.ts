@@ -16,12 +16,20 @@ import {
   reserveExternalResources,
 } from "@/app/(Logica)/services/external-sync.service";
 import { HttpError } from "@/app/(Logica)/integrations/http-json";
+import { validateApiKey, apiKeyResponse } from "@/app/(Logica)/integrations/api-key";
+
+function authCheck(request: NextRequest): NextResponse | null {
+  if (!validateApiKey(request)) return apiKeyResponse();
+  return null;
+}
 
 /**
  * POST /api/payments/ordenes-de-pago
  * Crea una nueva orden de pago y su preferencia en Mercado Pago.
  */
 export async function POST(request: NextRequest) {
+  const auth = authCheck(request);
+  if (auth) return auth;
   let reservationOrders: Array<{
     orderId: string;
     productId: string;
@@ -46,6 +54,8 @@ export async function POST(request: NextRequest) {
       orderId: o.order_id,
       sellerId: o.seller_id,
       productId: o.product_id,
+      productName: o.product_name,
+      unitPrice: o.unit_price,
       quantity: o.quantity,
       amount: o.unit_price * o.quantity + (o.quote?.shipping_price ?? 0),
       quoteId: o.quote?.quote_id,
@@ -66,6 +76,7 @@ export async function POST(request: NextRequest) {
     try {
       await reserveExternalResources({
         buyerId: body.buyer_id,
+        buyerName: body.buyer_name,
         orders: reservationOrders,
       });
     } catch (e: any) {
@@ -141,7 +152,9 @@ export async function POST(request: NextRequest) {
  * GET /api/payments/ordenes-de-pago
  * Lista las órdenes de pago (uso interno / admin).
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = authCheck(request);
+  if (auth) return auth;
   try {
     const ordenes = await getOrdenesDePago();
 
@@ -152,6 +165,8 @@ export async function GET() {
         order_id: oi.orderId,
         seller_id: oi.sellerId,
         product_id: oi.productId,
+        product_name: oi.productName,
+        quantity: oi.quantity,
         quote_id: oi.quoteId,
         amount: oi.amount,
       })),
