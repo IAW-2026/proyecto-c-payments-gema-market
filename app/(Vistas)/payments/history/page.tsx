@@ -1,5 +1,6 @@
 import { currentUser } from "@clerk/nextjs/server";
 import {
+  deleteOrderById,
   getOrdenesDePago,
   getOrdenesDePagoByBuyer,
 } from "@/app/(Logica)/services/ordenes-de-pago.service";
@@ -11,28 +12,13 @@ import {
   getUsuarioByClerkUserId,
   getUsuariosByIds,
 } from "@/app/(Logica)/services/usuario-sync.service";
-import { getApiKeyHash } from "@/app/(Logica)/integrations/api-key";
-import { cookies } from "next/headers";
 
 /** Forzar renderizado dinámico en cada request (evita cache en Vercel). */
 export const dynamic = "force-dynamic";
 
 async function deleteOrdenDePagoAction(paymentId: string) {
   "use server";
-  const apiKey = getApiKeyHash();
-  const cookieHeader = cookies().toString();
-  const appUrl = process.env.APP_URL ?? "http://localhost:3000";
-  const res = await fetch(`${appUrl}/api/payments/ordenes-de-pago/${paymentId}`, {
-    method: "DELETE",
-    headers: {
-      "x-api-key-hash": apiKey,
-      ...(cookieHeader ? { cookie: cookieHeader } : {}),
-    },
-  });
-
-  if (!res.ok) {
-    throw new Error("delete_failed");
-  }
+  await deleteOrderById(paymentId);
 }
 
 function mapToHistoryTransaction(
