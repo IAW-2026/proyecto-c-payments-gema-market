@@ -35,18 +35,24 @@ export async function reserveExternalResources(params: {
   orders: ReservationOrder[];
 }): Promise<void> {
   try {
-    for (const o of params.orders) {
-      if (o.quoteId) {
-        await reserveQuote({ quote_id: o.quoteId, order_id: o.orderId });
-      }
-      await reserveProduct(o.productId, {
-        order_id: o.orderId,
-        buyer_id: params.buyerId,
-        buyer_name: params.buyerName ?? "",
-        product_id: o.productId,
-        quantity: o.quantity,
-      });
-    }
+    await Promise.all(
+      params.orders.flatMap((o) => {
+        const promises = [];
+        if (o.quoteId) {
+          promises.push(reserveQuote({ quote_id: o.quoteId, order_id: o.orderId }));
+        }
+        promises.push(
+          reserveProduct(o.productId, {
+            order_id: o.orderId,
+            buyer_id: params.buyerId,
+            buyer_name: params.buyerName ?? "",
+            product_id: o.productId,
+            quantity: o.quantity,
+          })
+        );
+        return promises;
+      })
+    );
   } catch (err) {
     await releaseExternalResources({ orders: params.orders });
     throw err;
@@ -58,25 +64,22 @@ export async function releaseExternalResources(params: {
 }): Promise<void> {
   // Best-effort + idempotente: ignorar 404 y cualquier error de red.
   await Promise.all(
-    params.orders.map(async (o) => {
+    params.orders.flatMap((o) => {
+      const promises = [];
       if (o.quoteId) {
-        try {
-          await releaseQuoteReservation({ quote_id: o.quoteId, order_id: o.orderId });
-        } catch {
-          // ignore
-        }
+        promises.push(
+          releaseQuoteReservation({ quote_id: o.quoteId, order_id: o.orderId }).catch(() => {})
+        );
       }
-
-      try {
-        await releaseProductReservation(o.productId, {
+      promises.push(
+        releaseProductReservation(o.productId, {
           order_id: o.orderId,
           product_id: o.productId,
           quantity: o.quantity,
-        });
-      } catch {
-        // ignore
-      }
-    }),
+        }).catch(() => {})
+      );
+      return promises;
+    })
   );
 }
 
@@ -153,18 +156,15 @@ export async function notifyRejected(params: {
     amount: o.amount,
   }));
 
-  try {
-    await notifyBuyerPaymentRejected(orden.id, {
+  await Promise.all([
+    notifyBuyerPaymentRejected(orden.id, {
       payment_id: orden.id,
       orders: reservationOrders.map((o) => ({
         order_id: o.orderId,
         status: status === "cancelled" ? "cancelled" : "rejected",
         ...(reason ? { reason } : {}),
       })),
-    });
-  } catch (e) {
-    console.warn("Buyer notify rejected failed", e);
-  }
-
-  await releaseExternalResources({ orders: reservationOrders });
+    }).catch((e) => console.warn("Buyer notify rejected failed", e)),
+    releaseExternalResources({ orders: reservationOrders })
+  ]);
 }
