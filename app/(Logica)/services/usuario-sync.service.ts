@@ -30,3 +30,17 @@ export async function syncCurrentUser() {
     return null;
   }
 }
+
+export async function getUsuarioByClerkUserId(clerkUserId: string) {
+  if (!clerkUserId) return null;
+  return prisma.usuario.findUnique({
+    where: { clerkUserId },
+  });
+}
+
+export async function getUsuariosByIds(ids: string[]) {
+  if (!ids.length) return [];
+  return prisma.usuario.findMany({
+    where: { id: { in: ids } },
+  });
+}

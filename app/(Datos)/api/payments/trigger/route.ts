@@ -113,6 +113,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       message: "Trigger ejecutado con éxito. Se reutilizaron usuarios existentes y se generaron items aleatorios.",
+      buyer_name: buyer.fullName ?? buyer.email ?? buyer.clerkUserId,
       simulated_payload: payload,
       api_response: result,
       checkout_url: result.checkout_url
