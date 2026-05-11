@@ -38,6 +38,7 @@ export async function GET(
         order_id: o.orderId,
         seller_id: o.sellerId,
         product_id: o.productId,
+        product_name: o.productName,
         quantity: o.quantity,
         quote_id: o.quoteId,
         amount: o.amount,

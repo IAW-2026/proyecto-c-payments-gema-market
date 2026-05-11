@@ -8,11 +8,19 @@ function mapToHistoryTransaction(orden: OrdenDePago): HistoryTransaction {
   const isFailed = orden.status === "rejected" || orden.status === "cancelled";
   const isPending = orden.status === "pending" || orden.status === "in_process" || orden.status === "in_mediation";
 
-  const items: HistoryTransactionItem[] = (orden.orders ?? []).map((o) => ({
-    productId: o.productId,
-    quantity: o.quantity,
-    unitPrice: o.quantity > 0 ? o.amount / o.quantity : o.amount,
-  }));
+  const items: HistoryTransactionItem[] = (orden.orders ?? []).map((o) => {
+    const up = o.unitPrice ?? 0;
+    const sp = up > 0 ? o.amount - up * o.quantity : 0;
+    return {
+      productId: o.productId,
+      productName: o.productName,
+      quantity: o.quantity,
+      unitPrice: up,
+      shippingPrice: sp,
+    };
+  });
+
+  const shippingTotal = items.reduce((sum, i) => sum + i.shippingPrice, 0);
 
   return {
     id: orden.mpPaymentId ?? orden.id,
@@ -24,6 +32,7 @@ function mapToHistoryTransaction(orden: OrdenDePago): HistoryTransaction {
     status: isFailed ? "fail" : isPending ? "pending" : "ok",
     items,
     currency: orden.currency,
+    shippingTotal,
   };
 }
 

@@ -13,6 +13,16 @@ export default async function SuccessPage({
 
   if (!orden) return notFound();
 
+  const upFallback = (up: number | undefined, qty: number, amt: number) =>
+    up ?? (qty > 0 ? amt / qty : 0);
+
+  const items = orden.orders.map((o) => {
+    const up = upFallback(o.unitPrice, o.quantity, o.amount);
+    const sp = up > 0 ? o.amount - up * o.quantity : 0;
+    return { productName: o.productName, quantity: o.quantity, unitPrice: up, shippingPrice: sp };
+  });
+  const totalShipping = items.reduce((sum, i) => sum + i.shippingPrice, 0);
+
   return (
     <SuccessView
       paymentId={orden.id}
@@ -20,6 +30,8 @@ export default async function SuccessPage({
       orderId={orden.orders[0]?.orderId ?? "—"}
       date={formatDate(orden.paidAt)}
       transactionId={orden.mpPaymentId ?? "—"}
+      items={items}
+      totalShipping={totalShipping}
     />
   );
 }

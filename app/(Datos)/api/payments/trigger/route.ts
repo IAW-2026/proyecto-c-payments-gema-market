@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateUlid } from "@/app/lib/ulid";
 import prisma from "@/app/lib/prisma";
-
+import { getApiKeyHash } from "@/app/(Logica)/integrations/api-key";
 /**
  * GET /api/payments/trigger
  * Simula una compra aleatoria disparando el flujo completo de creación de órdenes.
@@ -59,24 +59,20 @@ export async function GET() {
       const seller = getRandomUser();
       const sellerId = seller.id;
       
-      const hasQuote = Math.random() > 0.5;
+      const quoteId = generateUlid("qte");
+      const quoteData = {
+        quote_id: quoteId,
+        shipping_price: Math.floor(Math.random() * 150) + 30,
+      };
 
-      // (Simulación de producto existente, la API mock ya no valida persistencia)
-
-      let quoteData = undefined;
-      if (hasQuote) {
-        const quoteId = generateUlid("qte");
-        // (Simulación de cotización, la API mock ya no valida persistencia)
-        quoteData = {
-          quote_id: quoteId,
-          shipping_price: Math.floor(Math.random() * 100) + 20,
-        };
-      }
+      const productNames = ["Silla de madera", "Placard", "Mesa ratona", "Escritorio", "Estantería", "Lampara de pie", "Lampara de mesa", "Mesa de comedor", "Sillon esquinero"];
+      const productName = productNames[i % productNames.length];
 
       orders.push({
         order_id: orderId,
         seller_id: sellerId,
         product_id: productId,
+        product_name: productName,
         quantity,
         unit_price: unitPrice,
         ...(quoteData ? { quote: quoteData } : {})
@@ -91,10 +87,12 @@ export async function GET() {
     };
 
     // 2. Realizar el POST a nuestro propio endpoint
+    const apiKey = await getApiKeyHash();
     const response = await fetch(`${appUrl}/api/payments/ordenes-de-pago`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "x-api-key-hash": apiKey
       },
       body: JSON.stringify(payload),
     });

@@ -9,16 +9,25 @@ import {
   fmtARS,
 } from "@/app/(Vistas)/payments/shared/components";
 
+export interface MethodsViewItem {
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  shippingPrice: number;
+}
+
 export interface MethodsViewProps {
   paymentId: string;
   totalAmount: number;
-  productCount: number;
+  items: MethodsViewItem[];
+  totalShipping: number;
 }
 
 const MethodsView = ({
   paymentId,
   totalAmount,
-  productCount,
+  items,
+  totalShipping,
 }: MethodsViewProps) => {
   const router = useRouter();
 
@@ -36,7 +45,36 @@ const MethodsView = ({
               </div>
               <div className="text-[32px] font-bold">{fmtARS(totalAmount)}</div>
               <div className="text-xs opacity-80 mt-1.5">
-                {productCount} productos · UniHousing
+                {items.length} {items.length === 1 ? "producto" : "productos"} · UniHousing
+              </div>
+            </Card>
+
+            <Card padding={16} className="mb-4">
+              <div className="text-[11px] font-semibold text-ink-3 mb-3 uppercase tracking-wider">Productos</div>
+              <div className="space-y-2">
+                {items.map((item, i) => (
+                  <div key={i}>
+                    <div className="flex justify-between items-center py-1">
+                      <span className="text-[13px] text-ink flex items-center gap-1.5">
+                        <span className="bg-bone text-ink-2 px-1.5 py-0.5 rounded text-[11px] font-bold">{item.quantity}x</span>
+                        {item.productName}
+                      </span>
+                      <span className="text-[13px] text-ink font-bold">{fmtARS(item.unitPrice * item.quantity)}</span>
+                    </div>
+                    {item.shippingPrice > 0 && (
+                      <div className="flex justify-between items-center py-1 pl-[34px]">
+                        <span className="text-[12px] text-ink-3">Envío</span>
+                        <span className="text-[12px] text-ink-3">{fmtARS(item.shippingPrice)}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {totalShipping > 0 && (
+                  <div className="flex justify-between items-center pt-2 mt-2 border-t border-line/50 text-[12px] font-semibold text-ink-3">
+                    <span>Total envío</span>
+                    <span>{fmtARS(totalShipping)}</span>
+                  </div>
+                )}
               </div>
             </Card>
             <Card padding={14} className="flex gap-2.5 items-center">

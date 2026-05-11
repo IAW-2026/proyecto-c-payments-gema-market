@@ -28,6 +28,8 @@ export interface OrderItem {
   orderId: string;
   sellerId: string;
   productId: string;
+  productName: string;
+  unitPrice: number;
   quoteId?: string;
   amount: number;
   quantity: number;
@@ -44,6 +46,7 @@ export interface CreateOrdenDePagoRequest {
     order_id: string;
     seller_id: string;
     product_id: string;
+    product_name: string;
     quantity: number;
     unit_price: number;
     quote?: {
@@ -74,6 +77,7 @@ export interface GetOrdenDePagoResponse {
     order_id: string;
     seller_id: string;
     product_id: string;
+    product_name: string;
     quantity: number;
     quote_id?: string;
     amount: number;

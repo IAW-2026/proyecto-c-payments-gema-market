@@ -7,8 +7,10 @@ import { Card, Icon, Pill, Button, fmtARS } from "@/app/(Vistas)/payments/shared
 
 export interface HistoryTransactionItem {
   productId: string;
+  productName: string;
   quantity: number;
   unitPrice: number;
+  shippingPrice: number;
 }
 
 export interface HistoryTransaction {
@@ -21,6 +23,7 @@ export interface HistoryTransaction {
   status: "ok" | "fail" | "pending";
   items: HistoryTransactionItem[];
   currency: string;
+  shippingTotal: number;
 }
 
 export interface HistoryViewProps {
@@ -79,7 +82,7 @@ const HistoryView = ({ transactions }: HistoryViewProps) => {
             const isExpanded = expandedId === t.id;
             const totalItems = t.items.length;
             const summary = totalItems === 1
-              ? `${t.items[0].quantity}x ${t.items[0].productId}`
+              ? `${t.items[0].quantity}x ${t.items[0].productName}`
               : `${totalItems} productos`;
             return (
               <div key={t.id} className={i < filteredTransactions.length - 1 ? "border-b border-line" : ""}>
@@ -113,17 +116,31 @@ const HistoryView = ({ transactions }: HistoryViewProps) => {
                     <div className="text-[11px] font-semibold text-ink-3 mb-3 uppercase tracking-wider">Detalle de la orden</div>
                     <div className="space-y-2">
                       {t.items.map((item, j) => (
-                        <div key={j} className="flex justify-between items-center bg-white p-2.5 rounded-lg shadow-sm border border-line/50 gap-2">
-                          <span className="text-[13px] text-ink font-medium flex items-center gap-2 min-w-0 flex-1">
-                            <span className="bg-bone text-ink-2 px-1.5 py-0.5 rounded text-[11px] font-bold shrink-0">{item.quantity}x</span>
-                            <span className="truncate" title={item.productId}>{item.productId}</span>
-                          </span>
-                          <span className="text-[13px] text-ink font-bold shrink-0">
-                            {fmtARS(item.unitPrice * item.quantity)}
-                          </span>
+                        <div key={j}>
+                          <div className="flex justify-between items-center bg-white p-2.5 rounded-lg shadow-sm border border-line/50 gap-2">
+                            <span className="text-[13px] text-ink font-medium flex items-center gap-2 min-w-0 flex-1">
+                              <span className="bg-bone text-ink-2 px-1.5 py-0.5 rounded text-[11px] font-bold shrink-0">{item.quantity}x</span>
+                              <span className="truncate" title={item.productName}>{item.productName}</span>
+                            </span>
+                            <span className="text-[13px] text-ink font-bold shrink-0">
+                              {fmtARS(item.unitPrice * item.quantity)}
+                            </span>
+                          </div>
+                          {item.shippingPrice > 0 && (
+                            <div className="flex justify-between items-center py-1 px-2">
+                              <span className="text-[12px] text-ink-3">Envío</span>
+                              <span className="text-[12px] text-ink-3">{fmtARS(item.shippingPrice)}</span>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
+                    {t.shippingTotal > 0 && (
+                      <div className="flex justify-between items-center pt-2 mt-2 border-t border-line/50 text-[12px] font-semibold text-ink-3">
+                        <span>Total envío</span>
+                        <span>{fmtARS(t.shippingTotal)}</span>
+                      </div>
+                    )}
                     {pending && (
                       <div className="mt-4">
                         <Button

@@ -37,13 +37,39 @@ export async function createPreference(
   const { paymentId, items, currency } = params;
 
   // Mapear los items de la orden al formato de MP
-  const mpItems = items.map((item) => ({
-    id: item.orderId,
-    title: `Orden ${item.orderId}`,
-    quantity: item.quantity,
-    unit_price: item.amount / item.quantity,
-    currency_id: currency,
-  }));
+  const mpItems: {
+    id: string;
+    title: string;
+    description?: string;
+    quantity: number;
+    unit_price: number;
+    currency_id: string;
+  }[] = [];
+
+  for (const item of items) {
+    const unitPrice = item.unitPrice ?? (item.quantity > 0 ? item.amount / item.quantity : 0);
+    mpItems.push({
+      id: item.orderId,
+      title: `${item.productName} x${item.quantity}`,
+      description: item.productName,
+      quantity: item.quantity,
+      unit_price: unitPrice,
+      currency_id: currency,
+    });
+
+    const shippingPrice = item.amount - unitPrice * item.quantity;
+    if (shippingPrice > 0) {
+      mpItems.push({
+        id: `${item.orderId}_shipping`,
+        title: "Envío",
+        quantity: 1,
+        unit_price: shippingPrice,
+        currency_id: currency,
+      });
+    }
+  }
+
+  const productSummary = items.map((i) => `${i.quantity}x ${i.productName}`).join(", ");
 
   // Normalizar APP_URL
   let appUrl = process.env.APP_URL || "http://localhost:3000";
@@ -58,6 +84,7 @@ export async function createPreference(
       purpose: "wallet_purchase",
       items: mpItems,
       external_reference: paymentId,
+
       back_urls: {
         success: `${appUrl}/api/payments/callback/mercadopago`,
         failure: `${appUrl}/api/payments/callback/mercadopago`,
