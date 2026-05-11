@@ -1,4 +1,8 @@
-import { getOrdenesDePago } from "@/app/(Logica)/services/ordenes-de-pago.service";
+import { currentUser } from "@clerk/nextjs/server";
+import {
+  getOrdenesDePago,
+  getOrdenesDePagoByBuyer,
+} from "@/app/(Logica)/services/ordenes-de-pago.service";
 import type { OrdenDePago } from "@/app/(Logica)/services/ordenes-de-pago.service";
 import HistoryView from "./HistoryView";
 import type { HistoryTransaction, HistoryTransactionItem } from "./HistoryView";
@@ -40,9 +44,17 @@ function mapToHistoryTransaction(orden: OrdenDePago): HistoryTransaction {
 }
 
 export default async function HistoryPage() {
-  const ordenes = await getOrdenesDePago();
+  const user = await currentUser();
+  const role = user?.publicMetadata?.role;
+  const isAdmin = role === "admin";
+
+  const ordenes = isAdmin
+    ? await getOrdenesDePago()
+    : user?.id
+      ? await getOrdenesDePagoByBuyer(user.id)
+      : [];
 
   const transactions = ordenes.map(mapToHistoryTransaction);
 
-  return <HistoryView transactions={transactions} />;
+  return <HistoryView transactions={transactions} isAdmin={isAdmin} />;
 }

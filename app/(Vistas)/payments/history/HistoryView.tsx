@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
 import { PayShell } from "@/app/(Vistas)/payments/components/PayShell";
-import { Card, Icon, Pill, Button, fmtARS } from "@/app/(Vistas)/payments/shared/components";
+import { Card, Icon, Pill, Button, fmtARS, useToast } from "@/app/(Vistas)/payments/shared/components";
 
 export interface HistoryTransactionItem {
   productId: string;
@@ -28,15 +28,18 @@ export interface HistoryTransaction {
 
 export interface HistoryViewProps {
   transactions: HistoryTransaction[];
+  isAdmin?: boolean;
 }
 
 const FILTERS = ["Todos", "Compras", "Fallidas", "Pendientes"];
 
-const HistoryView = ({ transactions }: HistoryViewProps) => {
+const HistoryView = ({ transactions, isAdmin = false }: HistoryViewProps) => {
   const [activeFilter, setActiveFilter] = useState("Todos");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const { signOut } = useClerk();
   const router = useRouter();
+  const { push, ToastHost } = useToast();
 
   const filteredTransactions = transactions.filter((t) => {
     if (activeFilter === "Todos") return true;
@@ -48,7 +51,16 @@ const HistoryView = ({ transactions }: HistoryViewProps) => {
 
   return (
     <PayShell
-      title="Historial de pagos"
+      title={
+        <div className="flex items-center gap-2">
+          <span>Historial de pagos</span>
+          {isAdmin && (
+            <Pill size="sm" tone="warn">
+              Admin
+            </Pill>
+          )}
+        </div>
+      }
       back="/"
       rightSlot={
         <button
@@ -105,6 +117,38 @@ const HistoryView = ({ transactions }: HistoryViewProps) => {
                   <div className={`font-bold text-sm shrink-0 text-right ${amountCls}`}>
                     {isPos ? "+" : ""}{fmtARS(Math.abs(t.amount))}
                   </div>
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      className="w-8 h-8 rounded-lg bg-bone flex items-center justify-center shrink-0 hover:bg-danger/10 transition-colors"
+                      title="Eliminar orden"
+                      onClick={async (e: React.MouseEvent) => {
+                        e.stopPropagation();
+                        if (deletingId) return;
+                        const confirmed = window.confirm(
+                          "Esta accion elimina la orden de pago. Quieres continuar?",
+                        );
+                        if (!confirmed) return;
+                        setDeletingId(t.paymentId);
+                        try {
+                          const res = await fetch(
+                            `/api/payments/ordenes-de-pago/${t.paymentId}`,
+                            { method: "DELETE" },
+                          );
+                          if (!res.ok) throw new Error("delete_failed");
+                          push("Orden eliminada correctamente", "success");
+                          router.refresh();
+                        } catch {
+                          push("No se pudo eliminar. Intenta nuevamente.", "danger");
+                        } finally {
+                          setDeletingId(null);
+                        }
+                      }}
+                      disabled={deletingId === t.paymentId}
+                    >
+                      <Icon name="trash" size={14} />
+                    </button>
+                  )}
                   <Icon
                     name="chevronDown"
                     size={14}
@@ -177,6 +221,7 @@ const HistoryView = ({ transactions }: HistoryViewProps) => {
           })}
         </Card>
       </div>
+      <ToastHost />
     </PayShell>
   );
 };
