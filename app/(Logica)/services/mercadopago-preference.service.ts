@@ -50,8 +50,8 @@ export async function createPreference(
     const unitPrice = item.unitPrice ?? (item.quantity > 0 ? item.amount / item.quantity : 0);
     mpItems.push({
       id: item.orderId,
-      title: `${item.productName} x${item.quantity}`,
-      description: item.productName,
+      title: `${item.productName ?? item.orderId} x${item.quantity}`,
+      description: item.productName ?? item.orderId,
       quantity: item.quantity,
       unit_price: unitPrice,
       currency_id: currency,
@@ -69,7 +69,7 @@ export async function createPreference(
     }
   }
 
-  const productSummary = items.map((i) => `${i.quantity}x ${i.productName}`).join(", ");
+  const productSummary = items.map((i) => `${i.quantity}x ${i.productName ?? i.orderId}`).join(", ");
 
   // Normalizar APP_URL
   let appUrl = process.env.APP_URL || "http://localhost:3000";

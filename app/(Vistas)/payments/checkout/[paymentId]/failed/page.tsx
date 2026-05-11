@@ -19,7 +19,7 @@ export default async function FailedPage({
   const items = orden.orders.map((o) => {
     const up = upFallback(o.unitPrice, o.quantity, o.amount);
     const sp = up > 0 ? o.amount - up * o.quantity : 0;
-    return { productName: o.productName, quantity: o.quantity, unitPrice: up, shippingPrice: sp };
+    return { productName: o.productName ?? o.productId, quantity: o.quantity, unitPrice: up, shippingPrice: sp };
   });
   const totalShipping = items.reduce((sum, i) => sum + i.shippingPrice, 0);
 
