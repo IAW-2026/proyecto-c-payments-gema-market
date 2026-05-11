@@ -163,7 +163,7 @@ export async function getOrdenesDePagoByBuyer(
 /**
  * Elimina una orden de pago por su ID (borrado físico).
  */
-export async function deleteOrdenDePago(paymentId: string) {
+export async function deleteOrderById(paymentId: string) {
   const row = await prisma.ordenDePago.delete({
     where: { id: paymentId },
   });
