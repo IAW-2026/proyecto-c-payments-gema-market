@@ -37,3 +37,10 @@ export async function getUsuarioByClerkUserId(clerkUserId: string) {
     where: { clerkUserId },
   });
 }
+
+export async function getUsuariosByIds(ids: string[]) {
+  if (!ids.length) return [];
+  return prisma.usuario.findMany({
+    where: { id: { in: ids } },
+  });
+}

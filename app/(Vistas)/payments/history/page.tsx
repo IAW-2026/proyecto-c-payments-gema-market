@@ -3,16 +3,42 @@ import {
   getOrdenesDePago,
   getOrdenesDePagoByBuyer,
 } from "@/app/(Logica)/services/ordenes-de-pago.service";
-import { getUsuarioByClerkUserId } from "@/app/(Logica)/services/usuario-sync.service";
 import type { OrdenDePago } from "@/app/(Logica)/services/ordenes-de-pago.service";
 import HistoryView from "./HistoryView";
 import type { HistoryTransaction, HistoryTransactionItem } from "./HistoryView";
 import { formatDate } from "@/app/lib/util";
+import {
+  getUsuarioByClerkUserId,
+  getUsuariosByIds,
+} from "@/app/(Logica)/services/usuario-sync.service";
+import { getApiKeyHash } from "@/app/(Logica)/integrations/api-key";
+import { cookies } from "next/headers";
 
 /** Forzar renderizado dinámico en cada request (evita cache en Vercel). */
 export const dynamic = "force-dynamic";
 
-function mapToHistoryTransaction(orden: OrdenDePago): HistoryTransaction {
+async function deleteOrdenDePagoAction(paymentId: string) {
+  "use server";
+  const apiKey = getApiKeyHash();
+  const cookieHeader = cookies().toString();
+  const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+  const res = await fetch(`${appUrl}/api/payments/ordenes-de-pago/${paymentId}`, {
+    method: "DELETE",
+    headers: {
+      "x-api-key-hash": apiKey,
+      ...(cookieHeader ? { cookie: cookieHeader } : {}),
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error("delete_failed");
+  }
+}
+
+function mapToHistoryTransaction(
+  orden: OrdenDePago,
+  buyerName?: string,
+): HistoryTransaction {
   const isFailed = orden.status === "rejected" || orden.status === "cancelled";
   const isPending = orden.status === "pending" || orden.status === "in_process" || orden.status === "in_mediation";
 
@@ -41,6 +67,7 @@ function mapToHistoryTransaction(orden: OrdenDePago): HistoryTransaction {
     items,
     currency: orden.currency,
     shippingTotal,
+    buyerName,
   };
 }
 
@@ -51,6 +78,8 @@ export default async function HistoryPage() {
 
   const usuario = user?.id ? await getUsuarioByClerkUserId(user.id) : null;
   const buyerId = usuario?.id ?? null;
+  const displayName =
+    user?.fullName ?? user?.primaryEmailAddress?.emailAddress ?? "";
 
   const ordenes = isAdmin
     ? await getOrdenesDePago()
@@ -58,7 +87,29 @@ export default async function HistoryPage() {
       ? await getOrdenesDePagoByBuyer(buyerId)
       : [];
 
-  const transactions = ordenes.map(mapToHistoryTransaction);
+  const buyerNameMap = isAdmin
+    ? new Map(
+        (
+          await getUsuariosByIds(
+            Array.from(new Set(ordenes.map((o) => o.buyerId))),
+          )
+        ).map((u) => [u.id, u.fullName ?? u.email ?? u.clerkUserId]),
+      )
+    : new Map();
 
-  return <HistoryView transactions={transactions} isAdmin={isAdmin} />;
+  const transactions = ordenes.map((orden) =>
+    mapToHistoryTransaction(
+      orden,
+      isAdmin ? buyerNameMap.get(orden.buyerId) : undefined,
+    ),
+  );
+
+  return (
+    <HistoryView
+      transactions={transactions}
+      isAdmin={isAdmin}
+      displayName={isAdmin ? "Admin" : displayName}
+      onDeleteOrden={deleteOrdenDePagoAction}
+    />
+  );
 }

@@ -24,20 +24,47 @@ export interface HistoryTransaction {
   items: HistoryTransactionItem[];
   currency: string;
   shippingTotal: number;
+  buyerName?: string;
 }
 
 export interface HistoryViewProps {
   transactions: HistoryTransaction[];
   isAdmin?: boolean;
+  displayName?: string;
+  onDeleteOrden?: (paymentId: string) => Promise<void>;
+}
+
+interface TriggerOrder {
+  order_id: string;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  quote?: {
+    shipping_price?: number;
+  };
+}
+
+interface TriggerInfo {
+  buyerName?: string;
+  orders: TriggerOrder[];
+  total: number;
+  checkoutUrl?: string;
 }
 
 const FILTERS = ["Todos", "Compras", "Fallidas", "Pendientes"];
 
-const HistoryView = ({ transactions, isAdmin = false }: HistoryViewProps) => {
+const HistoryView = ({
+  transactions,
+  isAdmin = false,
+  displayName,
+  onDeleteOrden,
+}: HistoryViewProps) => {
   const [activeFilter, setActiveFilter] = useState("Todos");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [triggerInfo, setTriggerInfo] = useState<TriggerInfo | null>(null);
+  const [triggerLoading, setTriggerLoading] = useState(false);
   const { signOut } = useClerk();
   const router = useRouter();
   const { push, ToastHost } = useToast();
@@ -46,10 +73,8 @@ const HistoryView = ({ transactions, isAdmin = false }: HistoryViewProps) => {
     if (deletingId) return;
     setDeletingId(paymentId);
     try {
-      const res = await fetch(`/api/payments/ordenes-de-pago/${paymentId}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error("delete_failed");
+      if (!onDeleteOrden) throw new Error("delete_unavailable");
+      await onDeleteOrden(paymentId);
       push("Orden eliminada correctamente", "success");
       router.refresh();
     } catch {
@@ -68,14 +93,40 @@ const HistoryView = ({ transactions, isAdmin = false }: HistoryViewProps) => {
     return true;
   });
 
+  const handleTrigger = async () => {
+    if (triggerLoading) return;
+    setTriggerLoading(true);
+    try {
+      const res = await fetch("/api/payments/trigger");
+      if (!res.ok) throw new Error("trigger_failed");
+      const data = await res.json();
+      const orders: TriggerOrder[] = data?.simulated_payload?.orders ?? [];
+      const total = orders.reduce((sum, o) => {
+        const base = Number(o.unit_price ?? 0) * Number(o.quantity ?? 0);
+        const ship = Number(o.quote?.shipping_price ?? 0);
+        return sum + base + ship;
+      }, 0);
+      setTriggerInfo({
+        buyerName: data?.buyer_name,
+        orders,
+        total,
+        checkoutUrl: data?.checkout_url,
+      });
+    } catch {
+      push("No se pudo disparar el trigger", "danger");
+    } finally {
+      setTriggerLoading(false);
+    }
+  };
+
   return (
     <PayShell
       title={
         <div className="flex items-center gap-2">
           <span>Historial de pagos</span>
-          {isAdmin && (
-            <Pill size="sm" tone="warn">
-              Admin
+          {displayName && (
+            <Pill size="sm" tone={isAdmin ? "warn" : "sage"}>
+              {displayName}
             </Pill>
           )}
         </div>
@@ -129,6 +180,11 @@ const HistoryView = ({ transactions, isAdmin = false }: HistoryViewProps) => {
                     <div className="text-[11px] text-ink-3 flex gap-1.5 items-center flex-wrap">
                       <span>{t.date}</span><span>·</span><span>{t.method}</span>
                       <span>·</span><span>{summary}</span>
+                      {isAdmin && t.buyerName && (
+                        <>
+                          <span>·</span><span>{t.buyerName}</span>
+                        </>
+                      )}
                       {failed && <Pill size="sm" tone="danger">Fallida</Pill>}
                       {pending && <Pill size="sm" tone="warn">Pendiente</Pill>}
                     </div>
@@ -224,6 +280,82 @@ const HistoryView = ({ transactions, isAdmin = false }: HistoryViewProps) => {
         </Card>
       </div>
       <ToastHost />
+      {isAdmin && (
+        <div className="fixed bottom-5 right-5 z-[9997]">
+          <Button
+            size="sm"
+            className="shadow-sh-3"
+            onClick={handleTrigger}
+            disabled={triggerLoading}
+          >
+            {triggerLoading ? "Disparando..." : "Disparar trigger"}
+          </Button>
+        </div>
+      )}
+      {isAdmin && triggerInfo && (
+        <div
+          className="fixed inset-0 z-[9998] bg-ink/40 backdrop-blur-[2px] flex items-center justify-center px-4"
+          onClick={() => setTriggerInfo(null)}
+        >
+          <div
+            className="w-full max-w-[420px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Card className="p-4">
+              <div className="text-sm font-semibold mb-1">Trigger ejecutado</div>
+              <div className="text-[12px] text-ink-3">
+                Comprador: {triggerInfo.buyerName ?? "-"}
+              </div>
+              <div className="mt-3 space-y-1.5">
+                {triggerInfo.orders.map((o, idx) => (
+                  <div
+                    key={`${o.order_id}-${idx}`}
+                    className="flex items-center justify-between text-[12px] text-ink"
+                  >
+                    <span className="truncate pr-2">
+                      {o.quantity}x {o.product_name}
+                    </span>
+                    <span className="text-ink-2">
+                      {fmtARS(
+                        Number(o.unit_price ?? 0) * Number(o.quantity ?? 0) +
+                          Number(o.quote?.shipping_price ?? 0),
+                      )}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 pt-3 border-t border-line/50 flex items-center justify-between text-[12px] font-semibold text-ink-2">
+                <span>Total</span>
+                <span>{fmtARS(triggerInfo.total)}</span>
+              </div>
+              {triggerInfo.checkoutUrl && (
+                <div className="mt-2 text-[12px] text-ink-3 break-all">
+                  {triggerInfo.checkoutUrl}
+                </div>
+              )}
+              <div className="mt-4 flex gap-2">
+                <Button
+                  size="sm"
+                  variant="soft"
+                  className="flex-1 justify-center"
+                  onClick={() => setTriggerInfo(null)}
+                >
+                  Cerrar
+                </Button>
+                {triggerInfo.checkoutUrl && (
+                  <Button
+                    size="sm"
+                    className="flex-1 justify-center"
+                    onClick={() => router.push(triggerInfo.checkoutUrl!)}
+                  >
+                    Ir al checkout
+                  </Button>
+                )}
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
       {isAdmin && confirmingId && (
         <div
           className="fixed inset-0 z-[9998] bg-ink/40 backdrop-blur-[2px] flex items-center justify-center px-4"

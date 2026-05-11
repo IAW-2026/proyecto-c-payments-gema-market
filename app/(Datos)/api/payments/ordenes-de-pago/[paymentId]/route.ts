@@ -73,6 +73,8 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ paymentId: string }> },
 ) {
+  const auth = authCheck(request);
+  if (auth) return auth;
   const { paymentId } = await params;
 
   try {
