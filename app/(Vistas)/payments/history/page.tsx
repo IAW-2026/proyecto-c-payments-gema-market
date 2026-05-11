@@ -3,6 +3,7 @@ import {
   getOrdenesDePago,
   getOrdenesDePagoByBuyer,
 } from "@/app/(Logica)/services/ordenes-de-pago.service";
+import { getUsuarioByClerkUserId } from "@/app/(Logica)/services/usuario-sync.service";
 import type { OrdenDePago } from "@/app/(Logica)/services/ordenes-de-pago.service";
 import HistoryView from "./HistoryView";
 import type { HistoryTransaction, HistoryTransactionItem } from "./HistoryView";
@@ -48,10 +49,13 @@ export default async function HistoryPage() {
   const role = user?.publicMetadata?.role;
   const isAdmin = role === "admin";
 
+  const usuario = user?.id ? await getUsuarioByClerkUserId(user.id) : null;
+  const buyerId = usuario?.id ?? null;
+
   const ordenes = isAdmin
     ? await getOrdenesDePago()
-    : user?.id
-      ? await getOrdenesDePagoByBuyer(user.id)
+    : buyerId
+      ? await getOrdenesDePagoByBuyer(buyerId)
       : [];
 
   const transactions = ordenes.map(mapToHistoryTransaction);

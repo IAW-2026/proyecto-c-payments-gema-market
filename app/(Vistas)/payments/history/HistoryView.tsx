@@ -37,9 +37,28 @@ const HistoryView = ({ transactions, isAdmin = false }: HistoryViewProps) => {
   const [activeFilter, setActiveFilter] = useState("Todos");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const { signOut } = useClerk();
   const router = useRouter();
   const { push, ToastHost } = useToast();
+
+  const handleDelete = async (paymentId: string) => {
+    if (deletingId) return;
+    setDeletingId(paymentId);
+    try {
+      const res = await fetch(`/api/payments/ordenes-de-pago/${paymentId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("delete_failed");
+      push("Orden eliminada correctamente", "success");
+      router.refresh();
+    } catch {
+      push("No se pudo eliminar. Intenta nuevamente.", "danger");
+    } finally {
+      setDeletingId(null);
+      setConfirmingId(null);
+    }
+  };
 
   const filteredTransactions = transactions.filter((t) => {
     if (activeFilter === "Todos") return true;
@@ -125,24 +144,7 @@ const HistoryView = ({ transactions, isAdmin = false }: HistoryViewProps) => {
                       onClick={async (e: React.MouseEvent) => {
                         e.stopPropagation();
                         if (deletingId) return;
-                        const confirmed = window.confirm(
-                          "Esta accion elimina la orden de pago. Quieres continuar?",
-                        );
-                        if (!confirmed) return;
-                        setDeletingId(t.paymentId);
-                        try {
-                          const res = await fetch(
-                            `/api/payments/ordenes-de-pago/${t.paymentId}`,
-                            { method: "DELETE" },
-                          );
-                          if (!res.ok) throw new Error("delete_failed");
-                          push("Orden eliminada correctamente", "success");
-                          router.refresh();
-                        } catch {
-                          push("No se pudo eliminar. Intenta nuevamente.", "danger");
-                        } finally {
-                          setDeletingId(null);
-                        }
+                        setConfirmingId(t.paymentId);
                       }}
                       disabled={deletingId === t.paymentId}
                     >
@@ -222,6 +224,41 @@ const HistoryView = ({ transactions, isAdmin = false }: HistoryViewProps) => {
         </Card>
       </div>
       <ToastHost />
+      {isAdmin && confirmingId && (
+        <div
+          className="fixed inset-0 z-[9998] bg-ink/40 backdrop-blur-[2px] flex items-center justify-center px-4"
+          onClick={() => setConfirmingId(null)}
+        >
+          <div
+            className="w-full max-w-[360px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Card className="p-4">
+              <div className="text-sm font-semibold mb-1">Eliminar orden</div>
+              <div className="text-[12px] text-ink-3">
+                Esta accion elimina la orden de pago de forma permanente.
+              </div>
+              <div className="mt-4 flex gap-2">
+                <Button
+                  size="sm"
+                  variant="soft"
+                  className="flex-1 justify-center"
+                  onClick={() => setConfirmingId(null)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  size="sm"
+                  className="flex-1 justify-center bg-danger text-paper hover:bg-danger/90"
+                  onClick={() => handleDelete(confirmingId)}
+                >
+                  Eliminar
+                </Button>
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
     </PayShell>
   );
 };
