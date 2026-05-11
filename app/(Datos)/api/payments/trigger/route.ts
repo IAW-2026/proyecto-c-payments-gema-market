@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { generateUlid } from "@/app/lib/ulid";
 import prisma from "@/app/lib/prisma";
 import { getApiKeyHash } from "@/app/(Logica)/integrations/api-key";
@@ -7,18 +7,9 @@ import { getApiKeyHash } from "@/app/(Logica)/integrations/api-key";
  * Simula una compra aleatoria disparando el flujo completo de creación de órdenes.
  * Reutiliza usuarios existentes de la base de datos para simular compras de usuarios reales.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    let appUrl = process.env.APP_URL;
-    if (!appUrl) {
-      throw new Error("APP_URL no configurada en el entorno.");
-    }
-    
-    // Normalizar APP_URL para garantizar que tenga http/https
-    appUrl = appUrl.replace(/\/$/, "");
-    if (!appUrl.startsWith("http://") && !appUrl.startsWith("https://")) {
-      appUrl = appUrl.includes("localhost") ? `http://${appUrl}` : `https://${appUrl}`;
-    }
+    const appUrl = request.nextUrl.origin;
 
     // 0. Obtener usuarios existentes para reutilizarlos
     let users = await prisma.usuario.findMany();
