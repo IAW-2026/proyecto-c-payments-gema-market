@@ -137,6 +137,7 @@ const HistoryView = ({
           onClick={() => signOut({ redirectUrl: "/sign-in" })}
           className="w-9 h-9 rounded-full bg-bone flex items-center justify-center shrink-0 hover:bg-danger/10 transition-colors"
           title="Cerrar sesión"
+          aria-label="Cerrar sesión"
         >
           <Icon name="logout" size={16} />
         </button>

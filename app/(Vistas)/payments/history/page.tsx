@@ -13,8 +13,6 @@ import {
   getUsuariosByIds,
 } from "@/app/(Logica)/services/usuario-sync.service";
 
-/** Forzar renderizado dinámico en cada request (evita cache en Vercel). */
-export const dynamic = "force-dynamic";
 
 async function deleteOrdenDePagoAction(paymentId: string) {
   "use server";
