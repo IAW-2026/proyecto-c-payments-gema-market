@@ -8,12 +8,21 @@ import {
   fmtARS,
 } from "@/app/(Vistas)/payments/shared/components";
 
+export interface FailedItem {
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  shippingPrice: number;
+}
+
 export interface FailedViewProps {
   paymentId: string;
   totalAmount: number;
   orderId: string;
   reason: string;
   attemptId: string;
+  items: FailedItem[];
+  totalShipping: number;
 }
 
 const FailedView = ({
@@ -22,6 +31,8 @@ const FailedView = ({
   orderId,
   reason,
   attemptId,
+  items,
+  totalShipping,
 }: FailedViewProps) => {
   const router = useRouter();
   const details = [
@@ -61,6 +72,23 @@ const FailedView = ({
                 <div className="text-[11px] text-ink-3">
                   No se hizo ningún cargo en tu cuenta.
                 </div>
+              </div>
+            </Card>
+            <Card padding={16} className="mb-3.5">
+              <div className="text-[11px] font-semibold text-ink-3 mb-3 uppercase tracking-wider">Resumen del pedido</div>
+              <div className="space-y-1">
+                {items.map((item, i) => (
+                  <div key={i} className="flex justify-between text-[13px]">
+                    <span className="text-ink truncate pr-2">{item.quantity}x {item.productName}</span>
+                    <span className="text-ink font-medium shrink-0">{fmtARS(item.unitPrice * item.quantity)}</span>
+                  </div>
+                ))}
+                {totalShipping > 0 && (
+                  <div className="flex justify-between text-[12px] text-ink-3 pt-1 mt-1 border-t border-line/50">
+                    <span>Envío</span>
+                    <span>{fmtARS(totalShipping)}</span>
+                  </div>
+                )}
               </div>
             </Card>
           </div>

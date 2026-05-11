@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { validateApiKey } from "@/app/(Logica)/integrations/api-key";
 
 export async function POST(
   request: NextRequest,
@@ -6,9 +7,14 @@ export async function POST(
 ) {
   const { productId } = await params;
 
+  if (!validateApiKey(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   let body: {
     order_id?: string;
     buyer_id?: string;
+    buyer_name?: string;
     product_id?: string;
     quantity?: number;
   };

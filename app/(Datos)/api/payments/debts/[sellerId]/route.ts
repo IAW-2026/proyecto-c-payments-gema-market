@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDebtsBySeller } from "@/app/(Logica)/services/ordenes-de-pago.service";
 import type { SellerDebtsResponse } from "@/app/(Logica)/types/payments.types";
+import { validateApiKey, apiKeyResponse } from "@/app/(Logica)/integrations/api-key";
+
+function authCheck(request: NextRequest): NextResponse | null {
+  if (!validateApiKey(request)) return apiKeyResponse();
+  return null;
+}
 
 /**
  * GET /api/payments/debts/[sellerId]?start_date=YYYY-MM-DD
@@ -12,6 +18,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ sellerId: string }> },
 ) {
+  const auth = authCheck(request);
+  if (auth) return auth;
   const { sellerId } = await params;
   
   // Obtener fecha de inicio desde los query params
