@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
-import {
-  deleteOrdenDePago,
-  getOrdenDePagoById,
-} from "@/app/(Logica)/services/ordenes-de-pago.service";
+import { getOrdenDePagoById } from "@/app/(Logica)/services/ordenes-de-pago.service";
 import type { GetOrdenDePagoResponse } from "@/app/(Logica)/types/payments.types";
 import { validateApiKey, apiKeyResponse } from "@/app/(Logica)/integrations/api-key";
 
@@ -65,36 +61,3 @@ export async function GET(
   }
 }
 
-/**
- * DELETE /api/payments/ordenes-de-pago/:paymentId
- * Elimina una orden de pago (solo admin).
- */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ paymentId: string }> },
-) {
-  const auth = authCheck(request);
-  if (auth) return auth;
-  const { paymentId } = await params;
-
-  try {
-    const user = await currentUser();
-    const role = user?.publicMetadata?.role;
-
-    if (role !== "admin") {
-      return NextResponse.json(
-        { error: "No autorizado para eliminar ordenes de pago." },
-        { status: 403 },
-      );
-    }
-
-    await deleteOrdenDePago(paymentId);
-
-    return NextResponse.json({ deleted: true, payment_id: paymentId }, { status: 200 });
-  } catch {
-    return NextResponse.json(
-      { error: "Error al eliminar la orden de pago." },
-      { status: 500 },
-    );
-  }
-}
