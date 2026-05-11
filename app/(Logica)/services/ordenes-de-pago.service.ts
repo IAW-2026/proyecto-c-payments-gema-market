@@ -161,6 +161,17 @@ export async function getOrdenesDePagoByBuyer(
 }
 
 /**
+ * Elimina una orden de pago por su ID (borrado físico).
+ */
+export async function deleteOrdenDePago(paymentId: string) {
+  const row = await prisma.ordenDePago.delete({
+    where: { id: paymentId },
+  });
+
+  return { id: row.id };
+}
+
+/**
  * Obtiene las deudas de la plataforma con un vendedor específico.
  * Solo considera órdenes con estado "approved".
  */
