@@ -4,6 +4,9 @@ import HistoryView from "./HistoryView";
 import type { HistoryTransaction, HistoryTransactionItem } from "./HistoryView";
 import { formatDate } from "@/app/lib/util";
 
+/** Forzar renderizado dinámico en cada request (evita cache en Vercel). */
+export const dynamic = "force-dynamic";
+
 function mapToHistoryTransaction(orden: OrdenDePago): HistoryTransaction {
   const isFailed = orden.status === "rejected" || orden.status === "cancelled";
   const isPending = orden.status === "pending" || orden.status === "in_process" || orden.status === "in_mediation";
