@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
 import { PayShell } from "@/app/(Vistas)/payments/components/PayShell";
 import { Card, Icon, Pill, Button, fmtARS, useToast } from "@/app/(Vistas)/payments/shared/components";
+import { mapCheckoutItems } from "@/app/lib/checkout-mapping";
 
 export interface HistoryTransactionItem {
   productId: string;
@@ -101,11 +102,22 @@ const HistoryView = ({
       if (!res.ok) throw new Error("trigger_failed");
       const data = await res.json();
       const orders: TriggerOrder[] = data?.simulated_payload?.orders ?? [];
-      const total = orders.reduce((sum, o) => {
-        const base = Number(o.unit_price ?? 0) * Number(o.quantity ?? 0);
-        const ship = Number(o.quote?.shipping_price ?? 0);
-        return sum + base + ship;
-      }, 0);
+      const normalizedOrders = orders.map((o) => ({
+        orderId: "seed",
+        sellerId: "seed",
+        productId: "seed",
+        productName: o.product_name,
+        unitPrice: o.unit_price,
+        quantity: o.quantity,
+        amount:
+          Number(o.unit_price ?? 0) * Number(o.quantity ?? 0) +
+          Number(o.quote?.shipping_price ?? 0),
+        quoteId: o.quote?.shipping_price ? "seed" : undefined,
+      }));
+      const { items, totalShipping } = mapCheckoutItems(normalizedOrders);
+      const total =
+        items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0) +
+        totalShipping;
       setTriggerInfo({
         buyerName: data?.buyer_name,
         orders,

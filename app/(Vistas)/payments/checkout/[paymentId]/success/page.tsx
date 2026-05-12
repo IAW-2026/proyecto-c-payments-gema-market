@@ -1,6 +1,8 @@
 import { getOrdenDePagoById } from "@/app/(Logica)/services/ordenes-de-pago.service";
 import { notFound, redirect } from "next/navigation";
 import SuccessView from "./SuccessView";
+import { mapCheckoutItems } from "@/app/lib/checkout-mapping";
+import { isFinalApproved, isFinalFailed } from "@/app/lib/payment-status";
 import { formatDate } from "@/app/lib/util";
 
 export default async function SuccessPage({
@@ -14,27 +16,15 @@ export default async function SuccessPage({
   if (!orden) return notFound();
 
   const status = orden.status;
-  const isApproved = status === "approved";
-  const isFailed =
-    status === "rejected" ||
-    status === "cancelled" ||
-    status === "refunded" ||
-    status === "charged_back";
+  const isApproved = isFinalApproved(status);
+  const isFailed = isFinalFailed(status);
 
   if (!isApproved) {
     if (isFailed) redirect(`/payments/checkout/${paymentId}/failed`);
     redirect(`/payments/checkout/${paymentId}/processing`);
   }
 
-  const upFallback = (up: number | undefined, qty: number, amt: number) =>
-    up ?? (qty > 0 ? amt / qty : 0);
-
-  const items = orden.orders.map((o) => {
-    const up = upFallback(o.unitPrice, o.quantity, o.amount);
-    const sp = up > 0 ? o.amount - up * o.quantity : 0;
-    return { productName: o.productName || "Producto", quantity: o.quantity, unitPrice: up, shippingPrice: sp };
-  });
-  const totalShipping = items.reduce((sum, i) => sum + i.shippingPrice, 0);
+  const { items, totalShipping } = mapCheckoutItems(orden.orders);
 
   return (
     <SuccessView

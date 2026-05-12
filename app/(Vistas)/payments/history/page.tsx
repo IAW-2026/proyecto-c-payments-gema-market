@@ -8,10 +8,12 @@ import type { OrdenDePago } from "@/app/(Logica)/services/ordenes-de-pago.servic
 import HistoryView from "./HistoryView";
 import type { HistoryTransaction, HistoryTransactionItem } from "./HistoryView";
 import { formatDate } from "@/app/lib/util";
+import { isFinalFailed, isPendingStatus } from "@/app/lib/payment-status";
 import {
   getUsuarioByClerkUserId,
   getUsuariosByIds,
 } from "@/app/(Logica)/services/usuario-sync.service";
+import { isAdminPaymentsUser } from "@/app/lib/auth-utils";
 
 
 async function deleteOrdenDePagoAction(paymentId: string) {
@@ -23,8 +25,8 @@ function mapToHistoryTransaction(
   orden: OrdenDePago,
   buyerName?: string,
 ): HistoryTransaction {
-  const isFailed = orden.status === "rejected" || orden.status === "cancelled";
-  const isPending = orden.status === "pending" || orden.status === "in_process" || orden.status === "in_mediation";
+  const isFailed = isFinalFailed(orden.status);
+  const isPending = isPendingStatus(orden.status);
 
   const items: HistoryTransactionItem[] = (orden.orders ?? []).map((o) => {
     const up = o.unitPrice ?? 0;
@@ -57,8 +59,7 @@ function mapToHistoryTransaction(
 
 export default async function HistoryPage() {
   const user = await currentUser();
-  const role = user?.publicMetadata?.role;
-  const isAdmin = role === "admin";
+  const isAdmin = isAdminPaymentsUser(user);
 
   const usuario = user?.id ? await getUsuarioByClerkUserId(user.id) : null;
   const buyerId = usuario?.id ?? null;
