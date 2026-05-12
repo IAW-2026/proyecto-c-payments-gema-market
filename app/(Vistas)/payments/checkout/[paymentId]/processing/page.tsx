@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Icon } from "@/app/(Vistas)/payments/shared/components";
-import { getApiKeyHash } from "@/app/(Logica)/integrations/api-key";
+import { getApiKeyHashAction } from "@/app/(Logica)/integrations/api-key-actions";
 import type { PaymentStatus } from "@/app/(Logica)/types/payments.types";
 import { isFinalApproved, isFinalFailed } from "@/app/lib/payment-status";
 /**
@@ -27,7 +27,7 @@ const Processing = () => {
     
     const checkStatus = async () => {
       try {
-        const apiKey = await getApiKeyHash();
+        const apiKey = await getApiKeyHashAction();
         const res = await fetch(`/api/payments/ordenes-de-pago/${paymentId}`, {
           headers: {
             "x-api-key-hash": apiKey,
