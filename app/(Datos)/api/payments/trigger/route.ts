@@ -4,19 +4,15 @@ import prisma from "@/app/lib/prisma";
 import { getApiKeyHash } from "@/app/(Logica)/integrations/api-key";
 import { POST as createOrderHandler } from "../ordenes-de-pago/route";
 /**
- * GET /api/payments/trigger
- * Simula una compra aleatoria disparando el flujo completo de creación de órdenes.
- * Reutiliza usuarios existentes de la base de datos para simular compras de usuarios reales.
+ * Dispara una compra aleatoria para pruebas locales.
  */
 export async function GET(request: NextRequest) {
   try {
     const appUrl = request.nextUrl.origin;
 
-    // 0. Obtener usuarios existentes para reutilizarlos
     let users = await prisma.usuario.findMany();
-    
+
     if (users.length === 0) {
-      // Si no hay usuarios, creamos un par de base para que el trigger funcione siempre
       const baseUsers = [];
       for (let i = 0; i < 2; i++) {
         const id = generateUlid("usr");
@@ -35,16 +31,15 @@ export async function GET(request: NextRequest) {
 
     const getRandomUser = () => users[Math.floor(Math.random() * users.length)];
 
-    // 1. Generar datos aleatorios de compra
     const buyer = getRandomUser();
     const buyerId = buyer.id;
     
-    const numOrders = Math.floor(Math.random() * 3) + 1; // 1 a 3 órdenes
+    const numOrders = Math.floor(Math.random() * 3) + 1;
     const orders = [];
 
     for (let i = 0; i < numOrders; i++) {
-      const quantity = Math.floor(Math.random() * 2) + 1; // 1 a 2 unidades
-      const unitPrice = Math.floor(Math.random() * 200) + 50; // 50 a 250 ARS
+      const quantity = Math.floor(Math.random() * 2) + 1;
+      const unitPrice = Math.floor(Math.random() * 200) + 50;
       
       const productId = generateUlid("prod");
       const orderId = generateUlid("ord");
@@ -78,7 +73,6 @@ export async function GET(request: NextRequest) {
       return_url: `${appUrl}/payments/history`
     };
 
-    // 2. Realizar el POST llamando directamente al handler interno para evitar el bloqueo de Vercel Auth
     const apiKey = await getApiKeyHash();
     
     const mockRequest = new NextRequest(new URL(`${appUrl}/api/payments/ordenes-de-pago`), {
@@ -90,7 +84,6 @@ export async function GET(request: NextRequest) {
       body: JSON.stringify(payload),
     });
 
-    // Llamada directa al handler interno
     const response = await createOrderHandler(mockRequest);
 
     if (!response || !response.ok) {

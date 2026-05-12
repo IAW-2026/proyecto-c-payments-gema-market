@@ -23,6 +23,9 @@ export interface MethodsViewProps {
   totalShipping: number;
 }
 
+/**
+ * Pantalla de seleccion de metodo de pago.
+ */
 const MethodsView = ({
   paymentId,
   totalAmount,

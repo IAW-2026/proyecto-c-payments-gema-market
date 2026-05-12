@@ -9,6 +9,9 @@ export class HttpError extends Error {
   }
 }
 
+/**
+ * Construye una URL absoluta uniendo base y path.
+ */
 function buildUrl(baseUrl: string, path: string): string {
   let base = baseUrl;
   if (!base.endsWith("/")) base += "/";
@@ -16,6 +19,9 @@ function buildUrl(baseUrl: string, path: string): string {
   return new URL(relative, base).toString();
 }
 
+/**
+ * Lee el body de la respuesta segun el content-type.
+ */
 async function tryReadBody(res: Response): Promise<unknown> {
   const contentType = res.headers.get("content-type") ?? "";
   try {
@@ -29,11 +35,17 @@ async function tryReadBody(res: Response): Promise<unknown> {
   }
 }
 
+/**
+ * Obtiene el hash de API key de forma lazy.
+ */
 async function getApiKeyHash(): Promise<string> {
   const { getApiKeyHash: getHash } = await import("@/app/(Logica)/integrations/api-key");
   return getHash();
 }
 
+/**
+ * Envia un POST JSON con API key y parsea la respuesta.
+ */
 export async function postJson<TReq, TRes>(params: {
   baseUrl: string;
   path: string;

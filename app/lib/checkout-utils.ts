@@ -8,6 +8,9 @@ import { isAdminPaymentsUser } from "@/app/lib/auth-utils";
 
 export { isFinalApproved, isFinalFailed, isPendingStatus };
 
+/**
+ * Verifica que el usuario actual sea duenio de la orden o admin.
+ */
 export async function ensurePaymentOwnership(
   orden: { buyerId: string },
   redirectTo = "/payments/history",

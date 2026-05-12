@@ -1,6 +1,9 @@
 
 import Link from "next/link";
 
+/**
+ * Vista 404 con link de retorno.
+ */
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-cream flex items-center justify-center p-6 text-center">

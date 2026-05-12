@@ -29,6 +29,9 @@ export type ReservationOrder = Pick<
 >;
 
 
+/**
+ * Reserva recursos externos (seller/shipping) de forma orquestada.
+ */
 export async function reserveExternalResources(params: {
   buyerId: string;
   buyerName?: string;
@@ -59,10 +62,12 @@ export async function reserveExternalResources(params: {
   }
 }
 
+/**
+ * Libera recursos externos de forma best-effort e idempotente.
+ */
 export async function releaseExternalResources(params: {
   orders: ReservationOrder[];
 }): Promise<void> {
-  // Best-effort + idempotente: ignorar 404 y cualquier error de red.
   await Promise.all(
     params.orders.flatMap((o) => {
       const promises = [];
@@ -83,6 +88,9 @@ export async function releaseExternalResources(params: {
   );
 }
 
+/**
+ * Notifica a Buyer/Seller un pago aprobado y distribuye fees.
+ */
 export async function notifyApproved(params: {
   orden: OrdenDePago;
 }): Promise<void> {
@@ -101,7 +109,6 @@ export async function notifyApproved(params: {
   const feeTotal = Number(orden.fee);
   const fees = splitFee(feeTotal, reservationOrders);
 
-  // Best-effort: no romper el webhook si alguna notificacion falla.
   await Promise.all([
     (async () => {
       try {
@@ -141,6 +148,9 @@ export async function notifyApproved(params: {
   ]);
 }
 
+/**
+ * Notifica rechazo/cancelacion y libera reservas externas.
+ */
 export async function notifyRejected(params: {
   orden: OrdenDePago;
 }): Promise<void> {

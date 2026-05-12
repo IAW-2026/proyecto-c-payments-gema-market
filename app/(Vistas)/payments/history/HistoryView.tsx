@@ -54,6 +54,9 @@ interface TriggerInfo {
 
 const FILTERS = ["Todos", "Compras", "Fallidas", "Pendientes"];
 
+/**
+ * Historial interactivo de transacciones y acciones admin.
+ */
 const HistoryView = ({
   transactions,
   isAdmin = false,
@@ -70,6 +73,9 @@ const HistoryView = ({
   const router = useRouter();
   const { push, ToastHost } = useToast();
 
+  /**
+   * Elimina una orden y refresca la vista.
+   */
   const handleDelete = async (paymentId: string) => {
     if (deletingId) return;
     setDeletingId(paymentId);
@@ -88,12 +94,15 @@ const HistoryView = ({
 
   const filteredTransactions = transactions.filter((t) => {
     if (activeFilter === "Todos") return true;
-    if (activeFilter === "Compras") return t.status === "ok"; 
+    if (activeFilter === "Compras") return t.status === "ok";
     if (activeFilter === "Fallidas") return t.status === "fail";
     if (activeFilter === "Pendientes") return t.status === "pending";
     return true;
   });
 
+  /**
+   * Dispara el trigger de compra aleatoria.
+   */
   const handleTrigger = async () => {
     if (triggerLoading) return;
     setTriggerLoading(true);

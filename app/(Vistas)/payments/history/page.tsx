@@ -15,12 +15,17 @@ import {
 } from "@/app/(Logica)/services/usuario-sync.service";
 import { isAdminPaymentsUser } from "@/app/lib/auth-utils";
 
-
+/**
+ * Accion server para eliminar una orden.
+ */
 async function deleteOrdenDePagoAction(paymentId: string) {
   "use server";
   await deleteOrderById(paymentId);
 }
 
+/**
+ * Mapea una orden a la forma de historial de UI.
+ */
 function mapToHistoryTransaction(
   orden: OrdenDePago,
   buyerName?: string,
@@ -57,6 +62,9 @@ function mapToHistoryTransaction(
   };
 }
 
+/**
+ * Pagina de historial de pagos.
+ */
 export default async function HistoryPage() {
   const user = await currentUser();
   const isAdmin = isAdminPaymentsUser(user);

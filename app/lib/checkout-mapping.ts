@@ -7,6 +7,9 @@ export interface CheckoutItem {
   shippingPrice: number;
 }
 
+/**
+ * Mapea items de orden a datos de checkout y total de envio.
+ */
 export function mapCheckoutItems(orders: OrderItem[]): {
   items: CheckoutItem[];
   totalShipping: number;

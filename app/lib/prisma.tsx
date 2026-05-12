@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 /**
- * Singleton para el cliente Prisma, que se conecta a la base de datos PostgreSQL.
+ * Crea un PrismaClient singleton con adapter-pg.
  */
 const prismaClientSingleton = () => {
   const pool = new Pool({

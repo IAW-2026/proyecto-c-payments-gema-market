@@ -2,6 +2,9 @@
 import { SignUp } from "@clerk/nextjs";
 import { Logo } from "@/app/(Vistas)/payments/shared/components";
 
+/**
+ * Pantalla de registro con Clerk.
+ */
 export default function SignUpPage() {
   return (
     <div className="min-h-screen bg-cream flex items-center justify-center p-6">

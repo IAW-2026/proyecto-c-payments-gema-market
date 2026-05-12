@@ -9,9 +9,7 @@ function authCheck(request: NextRequest): NextResponse | null {
 }
 
 /**
- * GET /api/payments/ordenes-de-pago/:paymentId
- * Consulta el estado actual de una orden de pago (consumido por Buyer, Seller, Control Plane).
- *
+ * Obtiene una orden de pago por ID.
  */
 export async function GET(
   request: NextRequest,

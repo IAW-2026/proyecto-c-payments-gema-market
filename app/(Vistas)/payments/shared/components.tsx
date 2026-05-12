@@ -1,8 +1,8 @@
-/* UniHousing — Componentes compartidos (Tailwind) */
-
 import React, { useState, useCallback } from "react";
-
-// ============== ICONOS (line, 1.5px) ==============
+//Componentes compartidos entre las apps. Diseñado por Claude design. Se ignora los errores de tipado any.
+/**
+ * Renderiza un icono SVG del set interno.
+ */
 const Icon = ({ name, size = 20, stroke = 1.5, className = "" }: any) => {
   const props: any = {
     width: size,
@@ -407,7 +407,9 @@ const Icon = ({ name, size = 20, stroke = 1.5, className = "" }: any) => {
 };
 export { Icon };
 
-// ============== BOTONES ==============
+/**
+ * Boton con variantes y tamanios predefinidos.
+ */
 const Button = ({ children, variant = "primary", size = "md", icon, iconRight, full, onClick, disabled, type = "button", className = "" }: any) => {
   const sizeMap: any = {
     sm: "h-[34px] px-3.5 text-[13px] gap-1.5",
@@ -442,7 +444,9 @@ const Button = ({ children, variant = "primary", size = "md", icon, iconRight, f
 };
 export { Button };
 
-// ============== TAGS / PILLS / BADGES ==============
+/**
+ * Etiqueta visual configurable (pill).
+ */
 const Pill = ({ children, tone = "neutral", size = "md", icon, onClick, active }: any) => {
   const toneMap: any = {
     neutral: "bg-bone text-olive",
@@ -473,7 +477,9 @@ const Pill = ({ children, tone = "neutral", size = "md", icon, onClick, active }
 };
 export { Pill };
 
-// ============== INPUTS ==============
+/**
+ * Wrapper de campo con label, hint y error.
+ */
 const Field = ({ label, hint, error, children, optional }: any) => (
   <label className="block">
     {label && (
@@ -489,6 +495,9 @@ const Field = ({ label, hint, error, children, optional }: any) => (
 );
 export { Field };
 
+/**
+ * Input con icono y sufijo opcional.
+ */
 const Input = ({ icon, suffix, className = "", ...rest }: any) => (
   <div className="flex items-center gap-2 w-full bg-paper border border-line-2 rounded-r2 px-3.5 h-[46px] transition-[border-color,box-shadow] duration-150 focus-within:border-olive">
     {icon && <Icon name={icon} size={18} className="text-ink-3" />}
@@ -501,7 +510,9 @@ const Input = ({ icon, suffix, className = "", ...rest }: any) => (
 );
 export { Input };
 
-// ============== CARD ==============
+/**
+ * Contenedor visual con borde y padding configurable.
+ */
 const Card = ({ children, padding = 20, style = {}, hover, onClick, className = "" }: any) => {
   const interactive = hover || onClick;
   return (
@@ -516,7 +527,9 @@ const Card = ({ children, padding = 20, style = {}, hover, onClick, className = 
 };
 export { Card };
 
-// ============== TOAST ==============
+/**
+ * Hook para mostrar toasts temporales.
+ */
 const useToast = () => {
   const [toasts, setToasts] = useState<any[]>([]);
   const push = useCallback((msg: any, tone = "success") => {
@@ -548,7 +561,9 @@ const useToast = () => {
 };
 export { useToast };
 
-// ============== PRODUCTOS PLACEHOLDER (SVG) ==============
+/**
+ * Icono ilustrado de producto segun categoria.
+ */
 const ProductGlyph = ({ kind, palette = ["#a4ac86", "#656d4a"], size = 80 }: any) => {
   const glyphs: any = {
     bath: (
@@ -629,7 +644,9 @@ const ProductGlyph = ({ kind, palette = ["#a4ac86", "#656d4a"], size = 80 }: any
 };
 export { ProductGlyph };
 
-// ============== AVATAR ==============
+/**
+ * Avatar basado en iniciales con color deterministicamente asignado.
+ */
 const Avatar = ({ name = "", size = 40, src }: any) => {
   const initials = name.split(" ").map((s: any) => s[0]).slice(0, 2).join("").toUpperCase() || "?";
   const palette = ["#a4ac86", "#7f4f24", "#656d4a", "#936639", "#414833"];
@@ -650,7 +667,9 @@ const Avatar = ({ name = "", size = 40, src }: any) => {
 };
 export { Avatar };
 
-// ============== SECTION TITLE ==============
+/**
+ * Titulo de seccion con eyebrow y accion opcional.
+ */
 const SectionTitle = ({ eyebrow, children, action }: any) => (
   <div className="flex justify-between items-end mb-4">
     <div>
@@ -668,7 +687,9 @@ const SectionTitle = ({ eyebrow, children, action }: any) => (
 );
 export { SectionTitle };
 
-// ============== EMPTY STATE ==============
+/**
+ * Vista de estado vacio reutilizable.
+ */
 const EmptyState = ({ icon = "box", title, body, action }: any) => (
   <div className="text-center px-6 py-12 max-w-[360px] mx-auto">
     <div className="w-[72px] h-[72px] rounded-full bg-bone text-olive flex items-center justify-center mx-auto mb-5">
@@ -681,7 +702,9 @@ const EmptyState = ({ icon = "box", title, body, action }: any) => (
 );
 export { EmptyState };
 
-// ============== SKELETON ==============
+/**
+ * Placeholder de carga con shimmer.
+ */
 const Skeleton = ({ w = "100%", h = 16, r = 8 }: any) => (
   <div
     className="animate-shimmer bg-gradient-to-r from-bone via-cream to-bone bg-[length:200%_100%]"
@@ -690,7 +713,9 @@ const Skeleton = ({ w = "100%", h = 16, r = 8 }: any) => (
 );
 export { Skeleton };
 
-// ============== LOGO ==============
+/**
+ * Logo de UniHousing con tamano configurable.
+ */
 const Logo = ({ size = 28, label = true, color = "currentColor" }: any) => (
   <div className="inline-flex items-center gap-2.5">
     <svg width={size} height={size} viewBox="0 0 32 32" className="shrink-0">
@@ -722,7 +747,9 @@ const Logo = ({ size = 28, label = true, color = "currentColor" }: any) => (
 );
 export { Logo };
 
-// ============== TABS ==============
+/**
+ * Tabs horizontales con estado activo.
+ */
 const Tabs = ({ tabs, active, onChange }: any) => (
   <div className="flex gap-1 border-b border-line overflow-x-auto max-w-full no-scrollbar [-webkit-overflow-scrolling:touch] flex-wrap-mobile">
     {tabs.map((t: any) => {
@@ -751,7 +778,9 @@ const Tabs = ({ tabs, active, onChange }: any) => (
 );
 export { Tabs };
 
-// ============== APP HEADER (top bar) ==============
+/**
+ * Header superior reutilizable para apps.
+ */
 const AppShellHeader = ({ appName, appColor, onBack }: any) => (
   <div className="sticky top-0 z-50 bg-paper/85 backdrop-blur-[12px] border-b border-line px-5 py-2.5 flex items-center justify-between">
     <a
@@ -771,5 +800,7 @@ const AppShellHeader = ({ appName, appColor, onBack }: any) => (
 );
 export { AppShellHeader };
 
-// Format currency ARS
+/**
+ * Formatea un numero como moneda ARS.
+ */
 export const fmtARS = (n: any) => "$" + n.toLocaleString("es-AR", { maximumFractionDigits: 0 });

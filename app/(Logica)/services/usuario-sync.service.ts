@@ -2,6 +2,9 @@ import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/app/lib/prisma";
 import { generateUlid } from "@/app/lib/ulid";
 
+/**
+ * Sincroniza el usuario autenticado de Clerk con la base local.
+ */
 export async function syncCurrentUser() {
   try {
     const clerkUser = await currentUser();
@@ -31,6 +34,9 @@ export async function syncCurrentUser() {
   }
 }
 
+/**
+ * Obtiene el usuario local a partir del ID de Clerk.
+ */
 export async function getUsuarioByClerkUserId(clerkUserId: string) {
   if (!clerkUserId) return null;
   return prisma.usuario.findUnique({
@@ -38,6 +44,9 @@ export async function getUsuarioByClerkUserId(clerkUserId: string) {
   });
 }
 
+/**
+ * Obtiene usuarios locales por una lista de IDs.
+ */
 export async function getUsuariosByIds(ids: string[]) {
   if (!ids.length) return [];
   return prisma.usuario.findMany({

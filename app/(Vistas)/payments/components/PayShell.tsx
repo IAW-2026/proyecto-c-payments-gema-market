@@ -1,7 +1,18 @@
 "use client";
+import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/app/(Vistas)/payments/shared/components";
-const PayShell = ({ children, title, back, rightSlot }: any) => {
+/**
+ * Layout base del flujo de pagos con header y contenedor.
+ */
+type PayShellProps = {
+  children: ReactNode;
+  title: ReactNode;
+  back?: string | null;
+  rightSlot?: ReactNode;
+};
+
+const PayShell = ({ children, title, back, rightSlot }: PayShellProps) => {
   const router = useRouter();
 
   return (

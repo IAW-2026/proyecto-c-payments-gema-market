@@ -10,6 +10,9 @@ function baseUrl(): string {
   return getRequiredBaseUrl("BUYER_APP_URL");
 }
 
+/**
+ * Notifica a Buyer un pago aprobado.
+ */
 export async function notifyBuyerPaymentConfirmed(
   paymentId: string,
   payload: PaymentConfirmedBuyerRequest,
@@ -21,6 +24,9 @@ export async function notifyBuyerPaymentConfirmed(
   });
 }
 
+/**
+ * Notifica a Buyer un pago rechazado/cancelado.
+ */
 export async function notifyBuyerPaymentRejected(
   paymentId: string,
   payload: PaymentRejectedBuyerRequest,

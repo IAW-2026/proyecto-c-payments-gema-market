@@ -2,6 +2,9 @@
 import { SignIn } from "@clerk/nextjs";
 import { Logo } from "@/app/(Vistas)/payments/shared/components";
 
+/**
+ * Pantalla de inicio de sesion con Clerk.
+ */
 export default function SignInPage() {
   return (
     <div className="min-h-screen bg-cream flex items-center justify-center p-6">

@@ -11,6 +11,9 @@ function baseUrl(): string {
   return getRequiredBaseUrl("SELLER_APP_URL");
 }
 
+/**
+ * Reserva un producto en Seller.
+ */
 export async function reserveProduct(
   productId: string,
   payload: ReserveProductRequest,
@@ -22,6 +25,9 @@ export async function reserveProduct(
   });
 }
 
+/**
+ * Libera una reserva de producto en Seller.
+ */
 export async function releaseProductReservation(
   productId: string,
   payload: ReleaseProductReservationRequest,
@@ -33,6 +39,9 @@ export async function releaseProductReservation(
   });
 }
 
+/**
+ * Notifica a Seller un pago aprobado.
+ */
 export async function notifySellerPaymentConfirmed(
   paymentId: string,
   payload: PaymentConfirmedSellerRequest,

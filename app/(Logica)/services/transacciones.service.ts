@@ -7,19 +7,13 @@ import prisma from "@/app/lib/prisma";
 import { generateUlid } from "@/app/lib/ulid";
 import type { Prisma } from "@prisma/client";
 
-// ─── Tipos de entrada ───────────────────────────────────────────────
-
 export interface CreateTransaccionParams {
   paymentId: string;
   eventType: string;
   payloadJson: Record<string, unknown>;
 }
 
-// ─── Tipo de salida ─────────────────────────────────────────────────
-
 export type Transaccion = Prisma.TransaccionGetPayload<Record<string, never>>;
-
-// ─── Servicio ───────────────────────────────────────────────────────
 
 /**
  * Crea una nueva transaccion (evento de Mercado Pago) en la base de datos.
