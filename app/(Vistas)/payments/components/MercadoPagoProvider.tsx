@@ -6,8 +6,7 @@ import { useEffect } from "react";
 const publicKey = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY;
 
 /**
- * Provider que inicializa el SDK de Mercado Pago en el cliente.
- * Debe envolver a todos los componentes que usen Bricks.
+ * Inicializa el SDK de Mercado Pago para componentes Brick.
  */
 export function MercadoPagoProvider({
   children,

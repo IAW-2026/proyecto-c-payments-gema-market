@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateApiKey } from "@/app/(Logica)/integrations/api-key";
 
+/**
+ * Mock: recibe notificacion de pago rechazado (Buyer).
+ */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ paymentId: string }> },

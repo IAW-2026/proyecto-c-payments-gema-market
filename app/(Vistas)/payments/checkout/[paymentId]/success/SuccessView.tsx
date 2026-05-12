@@ -25,6 +25,9 @@ export interface SuccessViewProps {
   totalShipping: number;
 }
 
+/**
+ * Vista de pago aprobado con resumen y detalles.
+ */
 const SuccessView = ({
   paymentId,
   totalAmount,

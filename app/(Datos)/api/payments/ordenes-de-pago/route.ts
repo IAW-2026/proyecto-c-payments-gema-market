@@ -15,7 +15,6 @@ import {
   releaseExternalResources,
   reserveExternalResources,
 } from "@/app/(Logica)/services/external-sync.service";
-import { HttpError } from "@/app/(Logica)/integrations/http-json";
 import { validateApiKey, apiKeyResponse } from "@/app/(Logica)/integrations/api-key";
 
 function authCheck(request: NextRequest): NextResponse | null {
@@ -41,7 +40,6 @@ export async function POST(request: NextRequest) {
   try {
     const body: CreateOrdenDePagoRequest = await request.json();
 
-    // Validación básica del body
     if (!body.buyer_id || !body.orders?.length || !body.currency) {
       return NextResponse.json(
         { error: "Campos requeridos: buyer_id, orders, currency" },
@@ -49,7 +47,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Calcular totales
     const orderItems = body.orders.map((o) => ({
       orderId: o.order_id,
       sellerId: o.seller_id,
@@ -72,24 +69,29 @@ export async function POST(request: NextRequest) {
     const totalAmount = orderItems.reduce((sum, o) => sum + o.amount, 0);
     const fee = calculateFee(totalAmount);
 
-    // 0. Reservas externas (Seller/Shipping). Si falla, propagar status.
     try {
       await reserveExternalResources({
         buyerId: body.buyer_id,
         buyerName: body.buyer_name,
         orders: reservationOrders,
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Error reservando recursos externos:", e);
-      
-      const isHttpError = e && typeof e === 'object' && 'status' in e && 'body' in e;
+
+      const isHttpError =
+        typeof e === "object" &&
+        e != null &&
+        "status" in e &&
+        "body" in e &&
+        typeof (e as { status?: unknown }).status === "number";
 
       if (isHttpError) {
+        const err = e as { status: number; body?: unknown; message?: string };
         const payload =
-          typeof e.body === "object" && e.body != null
-            ? e.body
-            : { error: e.message };
-        return NextResponse.json(payload, { status: e.status });
+          typeof err.body === "object" && err.body != null
+            ? err.body
+            : { error: err.message ?? "Error reservando recursos externos." };
+        return NextResponse.json(payload, { status: err.status });
       }
 
       return NextResponse.json(
@@ -101,7 +103,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. Persistir la orden de pago 
     const orden = await createOrdenDePago({
       buyerId: body.buyer_id,
       orders: orderItems,
@@ -110,7 +111,6 @@ export async function POST(request: NextRequest) {
       currency: body.currency,
     });
 
-    // 2. Crear preferencia en Mercado Pago con el ID real de la orden
     const preferenceResult = await createPreference({
       paymentId: orden.id,
       items: orderItems,
@@ -118,10 +118,8 @@ export async function POST(request: NextRequest) {
       currency: body.currency,
     });
 
-    // 3. Vincular la preferencia a la orden
     await updateOrdenDePagoPreference(orden.id, preferenceResult.preferenceId);
 
-    // 4. Responder con el contrato del API
     const response: CreateOrdenDePagoResponse = {
       payment_id: orden.id,
       checkout_url: `/payments/checkout/${orden.id}/methods`,
@@ -132,13 +130,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error al crear orden de pago:", error);
 
-    // Si ya reservamos, liberar best-effort.
     if (reservationOrders.length) {
       try {
         await releaseExternalResources({ orders: reservationOrders });
-      } catch {
-        // ignore
-      }
+      } catch {}
     }
 
     return NextResponse.json(
@@ -149,8 +144,7 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * GET /api/payments/ordenes-de-pago
- * Lista las órdenes de pago (uso interno / admin).
+ * Lista las ordenes de pago (uso interno/admin).
  */
 export async function GET(request: NextRequest) {
   const auth = authCheck(request);

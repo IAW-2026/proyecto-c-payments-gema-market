@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateApiKey } from "@/app/(Logica)/integrations/api-key";
 
+/**
+ * Mock: libera reserva de cotizacion en Shipping.
+ */
 export async function POST(request: NextRequest) {
   if (!validateApiKey(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

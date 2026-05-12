@@ -1,7 +1,18 @@
 "use client";
+import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/app/(Vistas)/payments/shared/components";
-const PayShell = ({ children, title, back, rightSlot }: any) => {
+/**
+ * Layout base del flujo de pagos con header y contenedor.
+ */
+type PayShellProps = {
+  children: ReactNode;
+  title: ReactNode;
+  back?: string | null;
+  rightSlot?: ReactNode;
+};
+
+const PayShell = ({ children, title, back, rightSlot }: PayShellProps) => {
   const router = useRouter();
 
   return (
@@ -14,6 +25,8 @@ const PayShell = ({ children, title, back, rightSlot }: any) => {
                 window.history.length > 1 ? router.back() : router.push(back)
               }
               className="w-9 h-9 rounded-full bg-bone flex items-center justify-center shrink-0"
+              aria-label="Volver atrás"
+              name="Volver atrás"
             >
               <Icon name="arrowLeft" size={16} />
             </button>

@@ -11,7 +11,8 @@ Esta aplicación centraliza el flujo financiero del ecosistema:
 - Creación y persistencia de órdenes de pago.
 - Integración nativa con **Mercado Pago Bricks**.
 - Procesamiento de Webhooks y sincronización de estados.
-- Historial de transacciones para compradores.
+ - Historial de transacciones para compradores.
+ - Controles de acceso por usuario y validación de estado en el checkout.
 
 ---
 
@@ -52,7 +53,7 @@ El proyecto sigue una organización **MVC (Modelo-Vista-Controlador)** adaptada 
 2. **Checkout**: El usuario navega por `/checkout/[id]/methods` hasta el **Wallet Brick** en `/wallet`.
 3. **Procesamiento**: Mercado Pago redirige al **Callback** (`/api/payments/callback/mercadopago`).
 4. **Sincronización**: El **Webhook** actualiza el estado real en la base de datos de forma asincrónica. Se liberan o confirman los recursos externos según corresponda.
-5. **Resultado**: El usuario visualiza la pantalla de `success` o `failed` según el resultado del polling.
+5. **Resultado**: Las pantallas `success` y `failed` validan el estado real y redirigen automáticamente si no coincide.
 
 ---
 
@@ -70,10 +71,14 @@ pnpm prisma:studio    # Explorar la base de datos
 ```
 
 ### 👑 Rol de Administrador y Pruebas
-El sistema ahora incluye soporte para el rol de **administrador**:
+El sistema ahora incluye soporte para el rol de **admin_payments**:
 - El admin cuenta con herramientas de simulación (Trigger) accesibles directamente desde la pantalla de Historial (`/payments/history`).
 - También se puede acceder a la ruta `GET /api/payments/trigger` para disparar el flujo de compras simuladas desde el navegador.
 - Estas herramientas permiten simular interacciones complejas de todo el flujo de pagos sin necesidad de cargar datos manualmente.
+
+### 🔐 Seguridad del Checkout
+- `methods`, `wallet`, `processing`, `success` y `failed` validan ownership por usuario (ID interno) y redirigen a `/payments/history` si no corresponde.
+- `success` y `failed` siempre verifican el estado real del pago antes de mostrar la pantalla.
 
 ## Accesos de prueba
 Las cuentas de prueba para mercado pago se encuentran en `TEST_MP_DATA.txt`, incluyen credenciales de acceso y credenciales de tarjetas de prueba y sus respectivos codigos para aprobar o rechazar la operacion

@@ -6,10 +6,9 @@
 
 export type OkResponse = { ok: true };
 
-// ------------------------------
-// Seller App 
-// ------------------------------
-
+/**
+ * Payload de reserva de producto en Seller.
+ */
 export type ReserveProductRequest = {
   order_id: string;
   buyer_id: string;
@@ -18,12 +17,18 @@ export type ReserveProductRequest = {
   quantity: number;
 };
 
+/**
+ * Payload para liberar reserva de producto en Seller.
+ */
 export type ReleaseProductReservationRequest = {
   order_id: string;
   product_id: string;
   quantity: number;
 };
 
+/**
+ * Payload para confirmar pago en Seller.
+ */
 export type PaymentConfirmedSellerRequest = {
   payment_id: string;
   orders: Array<{
@@ -37,10 +42,9 @@ export type PaymentConfirmedSellerRequest = {
   }>;
 };
 
-// ------------------------------
-// Buyer App 
-// ------------------------------
-
+/**
+ * Payload para confirmar pago en Buyer.
+ */
 export type PaymentConfirmedBuyerRequest = {
   payment_id: string;
   orders: Array<{
@@ -53,6 +57,9 @@ export type PaymentConfirmedBuyerRequest = {
   }>;
 };
 
+/**
+ * Payload para rechazo/cancelacion en Buyer.
+ */
 export type PaymentRejectedBuyerRequest = {
   payment_id: string;
   orders: Array<{
@@ -62,20 +69,25 @@ export type PaymentRejectedBuyerRequest = {
   }>;
 };
 
-// ------------------------------
-// Shipping App 
-// ------------------------------
-
+/**
+ * Payload de reserva de cotizacion en Shipping.
+ */
 export type ReserveQuoteRequest = {
   quote_id: string;
   order_id: string;
 };
 
+/**
+ * Respuesta de reserva de cotizacion en Shipping.
+ */
 export type ReserveQuoteResponse = {
   ok: true;
   reserved_until: string;
 };
 
+/**
+ * Payload para liberar reserva de cotizacion en Shipping.
+ */
 export type ReleaseQuoteRequest = {
   quote_id: string;
   order_id: string;
