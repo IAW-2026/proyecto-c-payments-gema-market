@@ -5,10 +5,8 @@
  *
  * Nota: OrdenDePago y Transaccion usan los tipos inferidos de Prisma directamente.
  * Solo se definen aqui tipos que no existen en el schema (enums de dominio,
- * estructuras JSONB, requests/responses de API).
+ * estructuras JSONB, requests/responses de API). Evitamos tipos dato espejo
  */
-
-// ─── Enums ──────────────────────────────────────────────────────────
 
 export type PaymentStatus =
   | "pending"
@@ -21,9 +19,9 @@ export type PaymentStatus =
   | "in_mediation";
 
 
-// ─── Entidades de dominio ───────────────────────────────────────────
-
-/** Detalle de cada orden individual dentro de una orden de pago agrupada */
+/**
+ * Detalle de cada orden individual dentro de una orden de pago agrupada.
+ */
 export interface OrderItem {
   orderId: string;
   sellerId: string;
@@ -36,9 +34,9 @@ export interface OrderItem {
 }
 
 
-// ─── Request bodies (API entrante) ─────────────────────────────────
-
-/** Body para POST /api/payments/ordenes-de-pago */
+/**
+ * Body para POST /api/payments/ordenes-de-pago.
+ */
 export interface CreateOrdenDePagoRequest {
   buyer_id: string;
   buyer_name?: string;
@@ -60,16 +58,18 @@ export interface CreateOrdenDePagoRequest {
 
 
 
-// ─── Response shapes (API saliente) ─────────────────────────────────
-
-/** Respuesta al crear una orden de pago */
+/**
+ * Respuesta al crear una orden de pago.
+ */
 export interface CreateOrdenDePagoResponse {
   payment_id: string;
   checkout_url: string;
   status: PaymentStatus;
 }
 
-/** Respuesta al consultar una orden de pago */
+/**
+ * Respuesta al consultar una orden de pago.
+ */
 export interface GetOrdenDePagoResponse {
   payment_id: string;
   buyer_id: string;
@@ -90,9 +90,9 @@ export interface GetOrdenDePagoResponse {
   created_at: string;
   paid_at?: string | null;
 }
-// ─── Debts (API saliente) ──────────────────────────────────────────
-
-/** Item individual de deuda para un vendedor */
+/**
+ * Item individual de deuda para un vendedor.
+ */
 export interface SellerDebtItem {
   payment_id: string;
   order_id: string;
@@ -104,7 +104,9 @@ export interface SellerDebtItem {
   date: string;
 }
 
-/** Respuesta de deudas para un vendedor */
+/**
+ * Respuesta de deudas para un vendedor.
+ */
 export interface SellerDebtsResponse {
   seller_id: string;
   total_debt: number;

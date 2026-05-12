@@ -3,6 +3,11 @@ import { useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Icon } from "@/app/(Vistas)/payments/shared/components";
 import { getApiKeyHash } from "@/app/(Logica)/integrations/api-key";
+import type { PaymentStatus } from "@/app/(Logica)/types/payments.types";
+import { isFinalApproved, isFinalFailed } from "@/app/lib/payment-status";
+/**
+ * Pantalla de espera con polling del estado de pago.
+ */
 const Processing = () => {
   const router = useRouter();
   const params = useParams();
@@ -12,12 +17,10 @@ const Processing = () => {
     let isMounted = true;
 
     
-    // Esperar 2.5s antes de la primera verificación para dar tiempo al webhook
     const initialCheck = setTimeout(() => {
       if (isMounted) checkStatus();
     }, 2500);
     
-    // Polling cada 5 segundos (menos agresivo)
     const interval = setInterval(() => {
       if (isMounted) checkStatus();
     }, 5000);
@@ -31,19 +34,16 @@ const Processing = () => {
           },
         });
         if (!res.ok || !isMounted) return;
-        const data = await res.json();
+        const data = (await res.json()) as { status?: PaymentStatus };
 
-        if (data.status === "approved") {
+        if (data.status && isFinalApproved(data.status)) {
           router.push(`/payments/checkout/${paymentId}/success`);
-        } else if (data.status === "rejected" || data.status === "cancelled") {
+        } else if (data.status && isFinalFailed(data.status)) {
           router.push(`/payments/checkout/${paymentId}/failed`);
         }
-      } catch {
-        // Silenciar errores de red en polling
-      }
+      } catch {}
     };
     
-    // Timeout de seguridad: después de 60s, ir a failed
     const timeout = setTimeout(() => {
       if (isMounted) router.push(`/payments/checkout/${paymentId}/failed`);
     }, 60000);

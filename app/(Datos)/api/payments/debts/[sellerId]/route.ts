@@ -9,10 +9,7 @@ function authCheck(request: NextRequest): NextResponse | null {
 }
 
 /**
- * GET /api/payments/debts/[sellerId]?start_date=YYYY-MM-DD
- *
- * Retorna la lista de deudas (órdenes pagadas) que la plataforma tiene con un vendedor.
- * Permite filtrar por una fecha de inicio.
+ * Retorna deudas de un vendedor con filtro opcional por fecha.
  */
 export async function GET(
   request: NextRequest,
@@ -21,11 +18,10 @@ export async function GET(
   const auth = authCheck(request);
   if (auth) return auth;
   const { sellerId } = await params;
-  
-  // Obtener fecha de inicio desde los query params
+
   const { searchParams } = new URL(request.url);
   const startDateStr = searchParams.get("start_date");
-  
+
   let startDate: Date | undefined;
   if (startDateStr) {
     startDate = new Date(startDateStr);
@@ -40,7 +36,6 @@ export async function GET(
   try {
     const result = await getDebtsBySeller(sellerId, startDate);
 
-    // Mapear resultado al contrato de API (snake_case)
     const response: SellerDebtsResponse = {
       seller_id: result.sellerId,
       total_debt: result.totalDebt,

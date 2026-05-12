@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
 import { PayShell } from "@/app/(Vistas)/payments/components/PayShell";
 import { Card, Icon, Pill, Button, fmtARS, useToast } from "@/app/(Vistas)/payments/shared/components";
+import { mapCheckoutItems } from "@/app/lib/checkout-mapping";
 
 export interface HistoryTransactionItem {
   productId: string;
@@ -53,6 +54,9 @@ interface TriggerInfo {
 
 const FILTERS = ["Todos", "Compras", "Fallidas", "Pendientes"];
 
+/**
+ * Historial interactivo de transacciones y acciones admin.
+ */
 const HistoryView = ({
   transactions,
   isAdmin = false,
@@ -69,6 +73,9 @@ const HistoryView = ({
   const router = useRouter();
   const { push, ToastHost } = useToast();
 
+  /**
+   * Elimina una orden y refresca la vista.
+   */
   const handleDelete = async (paymentId: string) => {
     if (deletingId) return;
     setDeletingId(paymentId);
@@ -87,12 +94,15 @@ const HistoryView = ({
 
   const filteredTransactions = transactions.filter((t) => {
     if (activeFilter === "Todos") return true;
-    if (activeFilter === "Compras") return t.status === "ok"; 
+    if (activeFilter === "Compras") return t.status === "ok";
     if (activeFilter === "Fallidas") return t.status === "fail";
     if (activeFilter === "Pendientes") return t.status === "pending";
     return true;
   });
 
+  /**
+   * Dispara el trigger de compra aleatoria.
+   */
   const handleTrigger = async () => {
     if (triggerLoading) return;
     setTriggerLoading(true);
@@ -101,11 +111,22 @@ const HistoryView = ({
       if (!res.ok) throw new Error("trigger_failed");
       const data = await res.json();
       const orders: TriggerOrder[] = data?.simulated_payload?.orders ?? [];
-      const total = orders.reduce((sum, o) => {
-        const base = Number(o.unit_price ?? 0) * Number(o.quantity ?? 0);
-        const ship = Number(o.quote?.shipping_price ?? 0);
-        return sum + base + ship;
-      }, 0);
+      const normalizedOrders = orders.map((o) => ({
+        orderId: "seed",
+        sellerId: "seed",
+        productId: "seed",
+        productName: o.product_name,
+        unitPrice: o.unit_price,
+        quantity: o.quantity,
+        amount:
+          Number(o.unit_price ?? 0) * Number(o.quantity ?? 0) +
+          Number(o.quote?.shipping_price ?? 0),
+        quoteId: o.quote?.shipping_price ? "seed" : undefined,
+      }));
+      const { items, totalShipping } = mapCheckoutItems(normalizedOrders);
+      const total =
+        items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0) +
+        totalShipping;
       setTriggerInfo({
         buyerName: data?.buyer_name,
         orders,
@@ -137,6 +158,7 @@ const HistoryView = ({
           onClick={() => signOut({ redirectUrl: "/sign-in" })}
           className="w-9 h-9 rounded-full bg-bone flex items-center justify-center shrink-0 hover:bg-danger/10 transition-colors"
           title="Cerrar sesión"
+          aria-label="Cerrar sesión"
         >
           <Icon name="logout" size={16} />
         </button>

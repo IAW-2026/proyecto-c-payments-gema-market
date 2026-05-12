@@ -8,8 +8,6 @@ import { Preference } from "mercadopago";
 import mercadoPagoClient from "@/app/lib/mercadopago";
 import type { OrderItem } from "@/app/(Logica)/types/payments.types";
 
-// ─── Tipos ──────────────────────────────────────────────────────────
-
 export interface CreatePreferenceParams {
   paymentId: string;
   items: OrderItem[];
@@ -21,8 +19,6 @@ export interface PreferenceResult {
   preferenceId: string;
   initPoint: string;
 }
-
-// ─── Servicio ───────────────────────────────────────────────────────
 
 const preference = new Preference(mercadoPagoClient);
 
@@ -36,7 +32,6 @@ export async function createPreference(
 ): Promise<PreferenceResult> {
   const { paymentId, items, currency } = params;
 
-  // Mapear los items de la orden al formato de MP
   const mpItems: {
     id: string;
     title: string;
@@ -69,13 +64,9 @@ export async function createPreference(
     }
   }
 
-  const productSummary = items.map((i) => `${i.quantity}x ${i.productName || "Producto"}`).join(", ");
-
-  // Normalizar APP_URL
   let appUrl = process.env.APP_URL || "http://localhost:3000";
-  appUrl = appUrl.replace(/\/$/, ""); // Quitar barra final si la tiene
+  appUrl = appUrl.replace(/\/$/, "");
   if (!appUrl.startsWith("http://") && !appUrl.startsWith("https://")) {
-    // Si no tiene protocolo, asumir https salvo que sea localhost
     appUrl = appUrl.includes("localhost") ? `http://${appUrl}` : `https://${appUrl}`;
   }
 

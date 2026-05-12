@@ -15,8 +15,7 @@ import {
 const paymentApi = new Payment(mercadoPagoClient);
 
 /**
- * POST /api/payments/webhooks/mercadopago
- * Recibe notificaciones IPN/Webhook de Mercado Pago.
+ * Recibe notificaciones de Mercado Pago y actualiza la orden.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -24,18 +23,20 @@ export async function POST(request: NextRequest) {
     const queryTopic = url.searchParams.get("topic") || url.searchParams.get("type");
     const queryId = url.searchParams.get("id") || url.searchParams.get("data.id");
 
-    let body: any = {};
+    let body: Record<string, unknown> = {};
     try {
       const text = await request.text();
       if (text) {
         body = JSON.parse(text);
       }
-    } catch (e) {
-      // Ignorar error si el body está vacío o no es un JSON válido
-    }
+    } catch {}
 
-    const eventType = body.type || queryTopic;
-    const mpPaymentIdRaw = body.data?.id || queryId;
+    const eventType =
+      (typeof body.type === "string" ? body.type : null) || queryTopic;
+    const mpPaymentIdRaw =
+      (typeof body.data === "object" && body.data != null && "id" in body.data
+        ? (body.data as { id?: unknown }).id
+        : null) || queryId;
 
     if (eventType !== "payment" || !mpPaymentIdRaw) {
       return new NextResponse(null, { status: 200 });
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
     let mpPayment;
     try {
       mpPayment = await paymentApi.get({ id: mpPaymentId });
-    } catch (apiError: any) {
+    } catch {
       return new NextResponse(null, { status: 200 });
     }
 
@@ -81,17 +82,19 @@ export async function POST(request: NextRequest) {
       paidAt: internalStatus === "approved" ? new Date() : undefined,
     });
 
-    const payloadToSave = Object.keys(body).length > 0
-      ? body
-      : { queryParams: Object.fromEntries(url.searchParams) };
+    const payloadToSave =
+      Object.keys(body).length > 0
+        ? body
+        : { queryParams: Object.fromEntries(url.searchParams) };
+
+    const action = typeof body.action === "string" ? body.action : undefined;
 
     await createTransaccion({
       paymentId,
-      eventType: body.action ?? eventType,
+      eventType: action ?? eventType ?? "payment",
       payloadJson: payloadToSave,
     });
 
-    // Side-effects inter-app (best-effort). Evitar duplicar si el status no cambio.
     if (prevStatus !== internalStatus) {
       if (internalStatus === "approved") {
         await notifyApproved({ orden: updatedOrden });
@@ -103,7 +106,7 @@ export async function POST(request: NextRequest) {
     }
 
     return new NextResponse(null, { status: 200 });
-  } catch (error) {
+  } catch {
     return new NextResponse(null, { status: 200 });
   }
 }

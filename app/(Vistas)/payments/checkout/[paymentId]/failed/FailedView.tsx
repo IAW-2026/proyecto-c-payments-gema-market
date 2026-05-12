@@ -25,6 +25,9 @@ export interface FailedViewProps {
   totalShipping: number;
 }
 
+/**
+ * Vista de pago rechazado con resumen y motivo.
+ */
 const FailedView = ({
   paymentId,
   totalAmount,

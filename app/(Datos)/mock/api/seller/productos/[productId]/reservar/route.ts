@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateApiKey } from "@/app/(Logica)/integrations/api-key";
 
+/**
+ * Mock: reserva producto en Seller.
+ */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ productId: string }> },

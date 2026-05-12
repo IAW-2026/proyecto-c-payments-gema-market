@@ -9,8 +9,6 @@ import type { OrderItem, PaymentStatus } from "@/app/(Logica)/types/payments.typ
 import type { Prisma } from "@prisma/client";
 import { calculateFee } from "@/app/lib/util";
 
-// ─── Tipos de entrada ───────────────────────────────────────────────
-
 export interface CreateOrdenDePagoParams {
   buyerId: string;
   orders: OrderItem[];
@@ -28,14 +26,10 @@ export interface UpdateOrdenDePagoStatusParams {
   paidAt?: Date;
 }
 
-// ─── Tipo de salida ─────────────────────────────────────────────────
-
 export type OrdenDePago = Omit<Prisma.OrdenDePagoGetPayload<Record<string, never>>, "orders" | "status"> & {
   orders: OrderItem[];
   status: PaymentStatus;
 };
-
-// ─── Helpers ────────────────────────────────────────────────────────
 
 /**
  * Parsea el campo `orders` de la DB de forma segura.
@@ -57,8 +51,6 @@ function parseOrders(raw: unknown): OrderItem[] {
   console.error("orders tiene un tipo inesperado:", typeof raw, raw);
   return [];
 }
-
-// ─── Servicio ───────────────────────────────────────────────────────
 
 /**
  * Crea una nueva orden de pago en la base de datos.
@@ -192,7 +184,6 @@ export async function getDebtsBySeller(sellerId: string, startDate?: Date) {
   let totalDebt = 0;
 
   for (const row of rows) {
-    // orders es un Json (array de OrderItem) — parseOrders maneja string vs object
     const orders = parseOrders(row.orders);
     const sellerItems = orders.filter((o) => o.sellerId === sellerId);
 

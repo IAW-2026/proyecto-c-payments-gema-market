@@ -18,6 +18,9 @@ export interface WalletBrickViewProps {
   totalShipping: number;
 }
 
+/**
+ * Vista del Wallet Brick con resumen de compra.
+ */
 const WalletBrickView = ({ paymentId, totalAmount, preferenceId, items, totalShipping }: WalletBrickViewProps) => {
   return (
     <PayShell title="Mercado Pago" back={`/payments/checkout/${paymentId}/methods`}>

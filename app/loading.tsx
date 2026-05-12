@@ -1,5 +1,6 @@
-
-
+/**
+ * Skeleton global de carga.
+ */
 export default function Loading() {
   return (
     <div className="min-h-screen bg-cream flex flex-col items-center pb-10 min-[600px]:p-6 lgx:p-8">

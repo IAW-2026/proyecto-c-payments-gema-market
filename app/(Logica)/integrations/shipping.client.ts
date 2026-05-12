@@ -11,6 +11,9 @@ function baseUrl(): string {
   return getRequiredBaseUrl("SHIPPING_APP_URL");
 }
 
+/**
+ * Reserva una cotizacion de envio en Shipping.
+ */
 export async function reserveQuote(
   payload: ReserveQuoteRequest,
 ): Promise<ReserveQuoteResponse> {
@@ -21,6 +24,9 @@ export async function reserveQuote(
   });
 }
 
+/**
+ * Libera una reserva de cotizacion en Shipping.
+ */
 export async function releaseQuoteReservation(
   payload: ReleaseQuoteRequest,
 ): Promise<OkResponse> {
