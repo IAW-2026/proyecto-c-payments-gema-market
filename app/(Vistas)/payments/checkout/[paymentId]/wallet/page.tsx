@@ -1,6 +1,8 @@
 import { getOrdenDePagoById } from "@/app/(Logica)/services/ordenes-de-pago.service";
-import { notFound } from "next/navigation";
+import { currentUser } from "@clerk/nextjs/server";
+import { notFound, redirect } from "next/navigation";
 import WalletBrickView from "./WalletBrickView";
+import { getUsuarioByClerkUserId } from "@/app/(Logica)/services/usuario-sync.service";
 
 export default async function WalletPage({
   params,
@@ -11,6 +13,15 @@ export default async function WalletPage({
   const orden = await getOrdenDePagoById(paymentId);
 
   if (!orden) return notFound();
+
+  const user = await currentUser();
+  const isAdmin = user?.publicMetadata?.role === "admin";
+  const usuario = user?.id ? await getUsuarioByClerkUserId(user.id) : null;
+  const buyerId = usuario?.id ?? null;
+
+  if (!isAdmin && (!buyerId || orden.buyerId !== buyerId)) {
+    redirect("/payments/history");
+  }
 
   const upFallback = (up: number | undefined, qty: number, amt: number) =>
     up ?? (qty > 0 ? amt / qty : 0);

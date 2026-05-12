@@ -1,5 +1,5 @@
 import { getOrdenDePagoById } from "@/app/(Logica)/services/ordenes-de-pago.service";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import SuccessView from "./SuccessView";
 import { formatDate } from "@/app/lib/util";
 
@@ -12,6 +12,19 @@ export default async function SuccessPage({
   const orden = await getOrdenDePagoById(paymentId);
 
   if (!orden) return notFound();
+
+  const status = orden.status;
+  const isApproved = status === "approved";
+  const isFailed =
+    status === "rejected" ||
+    status === "cancelled" ||
+    status === "refunded" ||
+    status === "charged_back";
+
+  if (!isApproved) {
+    if (isFailed) redirect(`/payments/checkout/${paymentId}/failed`);
+    redirect(`/payments/checkout/${paymentId}/processing`);
+  }
 
   const upFallback = (up: number | undefined, qty: number, amt: number) =>
     up ?? (qty > 0 ? amt / qty : 0);
