@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { inter, jetBrainsMono } from "@/app/(Datos)/fonts";
 import "@/app/(Datos)/globals.css";
-import { syncCurrentUser } from "@/app/(Logica)/services/usuario-sync.service";
+import { SyncUser } from "@/app/sync-user";
 
 export const metadata: Metadata = {
   title: "UniHousing — Pagos",
@@ -14,13 +14,12 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  await syncCurrentUser();
-
   return (
     <ClerkProvider
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
     >
+      <SyncUser />
       <html
         lang="en"
         className={`${inter.variable} ${jetBrainsMono.variable} h-full antialiased`}

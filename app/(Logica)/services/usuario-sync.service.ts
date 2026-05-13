@@ -1,6 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/app/lib/prisma";
 import { generateUlid } from "@/app/lib/ulid";
+import { cacheTag, cacheLife } from "next/cache";
 
 /**
  * Sincroniza el usuario autenticado de Clerk con la base local.
@@ -48,6 +49,9 @@ export async function getUsuarioByClerkUserId(clerkUserId: string) {
  * Obtiene usuarios locales por una lista de IDs.
  */
 export async function getUsuariosByIds(ids: string[]) {
+  'use cache'
+  cacheTag('usuarios')
+  cacheLife({ stale: 60, revalidate: 300, expire: 600 })
   if (!ids.length) return [];
   return prisma.usuario.findMany({
     where: { id: { in: ids } },

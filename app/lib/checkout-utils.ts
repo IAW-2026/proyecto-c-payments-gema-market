@@ -13,7 +13,7 @@ export { isFinalApproved, isFinalFailed, isPendingStatus };
  */
 export async function ensurePaymentOwnership(
   orden: { buyerId: string },
-  redirectTo = "/payments/history",
+  redirectTo = "/payments/history?page=1",
 ) {
   const user = await currentUser();
   if (isAdminPaymentsUser(user)) return;

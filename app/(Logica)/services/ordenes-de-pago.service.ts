@@ -8,6 +8,7 @@ import { generateUlid } from "@/app/lib/ulid";
 import type { OrderItem, PaymentStatus } from "@/app/(Logica)/types/payments.types";
 import type { Prisma } from "@prisma/client";
 import { calculateFee } from "@/app/lib/util";
+import { cacheTag, cacheLife } from "next/cache";
 
 export interface CreateOrdenDePagoParams {
   buyerId: string;
@@ -30,6 +31,40 @@ export type OrdenDePago = Omit<Prisma.OrdenDePagoGetPayload<Record<string, never
   orders: OrderItem[];
   status: PaymentStatus;
 };
+
+export interface OrdenesDePagoPagedResult {
+  rows: OrdenDePago[];
+  totalCount: number;
+}
+
+export type PaymentStatusFilter = "all" | "approved" | "pending" | "failed";
+
+export function statusFilterToPrismaWhere(filter: PaymentStatusFilter): { status?: string | { in: string[] } } {
+  switch (filter) {
+    case "approved":
+      return { status: "approved" };
+    case "pending":
+      return { status: { in: ["pending", "in_process", "in_mediation"] } };
+    case "failed":
+      return { status: { in: ["rejected", "cancelled", "refunded", "charged_back"] } };
+    case "all":
+    default:
+      return {};
+  }
+}
+
+export const FILTER_VALUES: PaymentStatusFilter[] = ["all", "approved", "pending", "failed"];
+
+export function normalizeFilter(raw: string | undefined | null): PaymentStatusFilter {
+  if (!raw) return "all";
+  const lower = raw.toLowerCase();
+  return FILTER_VALUES.includes(lower as PaymentStatusFilter) ? (lower as PaymentStatusFilter) : "all";
+}
+
+export interface OrdenesDePagoPageParams {
+  skip: number;
+  take: number;
+}
 
 /**
  * Parsea el campo `orders` de la DB de forma segura.
@@ -102,6 +137,9 @@ export async function updateOrdenDePagoStatus(
  * Obtiene todas las órdenes de pago.
  */
 export async function getOrdenesDePago(): Promise<OrdenDePago[]> {
+  'use cache'
+  cacheTag('ordenes-list-admin')
+  cacheLife({ stale: 5, revalidate: 15, expire: 60 })
   const rows = await prisma.ordenDePago.findMany({
     orderBy: { createdAt: "desc" },
   });
@@ -110,7 +148,42 @@ export async function getOrdenesDePago(): Promise<OrdenDePago[]> {
 }
 
 /**
- * Obtiene una orden de pago por su ID (payment_id).
+ * Obtiene el total de órdenes de pago, opcionalmente filtrado.
+ */
+export async function getOrdenesDePagoTotalCount(
+  filter: PaymentStatusFilter = "all",
+): Promise<number> {
+  'use cache'
+  cacheTag(`ordenes-count-${filter}`)
+  cacheLife({ stale: 5, revalidate: 15, expire: 60 })
+  return prisma.ordenDePago.count({
+    where: statusFilterToPrismaWhere(filter),
+  });
+}
+
+/**
+ * Obtiene órdenes de pago paginadas, opcionalmente filtradas.
+ */
+export async function getOrdenesDePagoPaged(
+  params: OrdenesDePagoPageParams,
+  filter: PaymentStatusFilter = "all",
+): Promise<OrdenDePago[]> {
+  'use cache'
+  cacheTag('ordenes-list-admin', `ordenes-list-admin-${filter}`)
+  cacheLife({ stale: 5, revalidate: 15, expire: 60 })
+  const rows = await prisma.ordenDePago.findMany({
+    where: statusFilterToPrismaWhere(filter),
+    orderBy: { createdAt: "desc" },
+    skip: params.skip,
+    take: params.take,
+  });
+
+  return rows.map((r) => ({ ...r, orders: parseOrders(r.orders), status: r.status as PaymentStatus }));
+}
+
+/**
+ * Obtiene una orden de pago por su ID (payment_id) — SIN CACHE.
+ * Usada por el webhook que necesita el estado actual siempre.
  */
 export async function getOrdenDePagoById(
   paymentId: string,
@@ -120,6 +193,19 @@ export async function getOrdenDePagoById(
   });
 
   return row ? { ...row, orders: parseOrders(row.orders), status: row.status as PaymentStatus } : null;
+}
+
+/**
+ * Versión cacheada de getOrdenDePagoById.
+ * Usada por páginas de checkout y layout para evitar consultas repetidas a Prisma.
+ */
+export async function getCachedOrdenDePagoById(
+  paymentId: string,
+): Promise<OrdenDePago | null> {
+  'use cache'
+  cacheTag(`orden-${paymentId}`)
+  cacheLife({ stale: 10, revalidate: 30, expire: 60 })
+  return getOrdenDePagoById(paymentId);
 }
 
 /**
@@ -144,9 +230,48 @@ export async function updateOrdenDePagoPreference(
 export async function getOrdenesDePagoByBuyer(
   buyerId: string,
 ): Promise<OrdenDePago[]> {
+  'use cache'
+  cacheTag(`ordenes-list-${buyerId}`)
+  cacheLife({ stale: 5, revalidate: 15, expire: 60 })
   const rows = await prisma.ordenDePago.findMany({
     where: { buyerId },
     orderBy: { createdAt: "desc" },
+  });
+
+  return rows.map((r) => ({ ...r, orders: parseOrders(r.orders), status: r.status as PaymentStatus }));
+}
+
+/**
+ * Obtiene el total de órdenes de pago de un comprador, opcionalmente filtrado.
+ */
+export async function getOrdenesDePagoByBuyerTotalCount(
+  buyerId: string,
+  filter: PaymentStatusFilter = "all",
+): Promise<number> {
+  'use cache'
+  cacheTag(`ordenes-count-${buyerId}`, `ordenes-count-${buyerId}-${filter}`)
+  cacheLife({ stale: 5, revalidate: 15, expire: 60 })
+  return prisma.ordenDePago.count({
+    where: { ...statusFilterToPrismaWhere(filter), buyerId },
+  });
+}
+
+/**
+ * Obtiene órdenes de pago paginadas de un comprador, opcionalmente filtradas.
+ */
+export async function getOrdenesDePagoByBuyerPaged(
+  buyerId: string,
+  params: OrdenesDePagoPageParams,
+  filter: PaymentStatusFilter = "all",
+): Promise<OrdenDePago[]> {
+  'use cache'
+  cacheTag(`ordenes-list-${buyerId}`, `ordenes-list-${buyerId}-${filter}`)
+  cacheLife({ stale: 5, revalidate: 15, expire: 60 })
+  const rows = await prisma.ordenDePago.findMany({
+    where: { ...statusFilterToPrismaWhere(filter), buyerId },
+    orderBy: { createdAt: "desc" },
+    skip: params.skip,
+    take: params.take,
   });
 
   return rows.map((r) => ({ ...r, orders: parseOrders(r.orders), status: r.status as PaymentStatus }));
@@ -160,7 +285,7 @@ export async function deleteOrderById(paymentId: string) {
     where: { id: paymentId },
   });
 
-  return { id: row.id };
+  return { id: row.id, buyerId: row.buyerId };
 }
 
 /**
@@ -168,6 +293,9 @@ export async function deleteOrderById(paymentId: string) {
  * Solo considera órdenes con estado "approved".
  */
 export async function getDebtsBySeller(sellerId: string, startDate?: Date) {
+  'use cache'
+  cacheTag(`debts-${sellerId}`)
+  cacheLife({ stale: 30, revalidate: 120, expire: 300 })
   const rows = await prisma.ordenDePago.findMany({
     where: {
       status: "approved",

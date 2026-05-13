@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
 import { PayShell } from "@/app/(Vistas)/payments/components/PayShell";
 import { Card, Icon, Pill, Button, fmtARS, useToast } from "@/app/(Vistas)/payments/shared/components";
@@ -33,6 +33,10 @@ export interface HistoryViewProps {
   isAdmin?: boolean;
   displayName?: string;
   onDeleteOrden?: (paymentId: string) => Promise<void>;
+  currentPage?: number;
+  totalPages?: number;
+  pageSize?: number;
+  currentFilter?: string;
 }
 
 interface TriggerOrder {
@@ -52,7 +56,12 @@ interface TriggerInfo {
   checkoutUrl?: string;
 }
 
-const FILTERS = ["Todos", "Compras", "Fallidas", "Pendientes"];
+const FILTERS: { label: string; value: string }[] = [
+  { label: "Todos", value: "all" },
+  { label: "Compras", value: "approved" },
+  { label: "Fallidas", value: "failed" },
+  { label: "Pendientes", value: "pending" },
+];
 
 /**
  * Historial interactivo de transacciones y acciones admin.
@@ -62,8 +71,10 @@ const HistoryView = ({
   isAdmin = false,
   displayName,
   onDeleteOrden,
+  currentPage = 1,
+  totalPages = 1,
+  currentFilter = "all",
 }: HistoryViewProps) => {
-  const [activeFilter, setActiveFilter] = useState("Todos");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
@@ -71,7 +82,23 @@ const HistoryView = ({
   const [triggerLoading, setTriggerLoading] = useState(false);
   const { signOut } = useClerk();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { push, ToastHost } = useToast();
+  const hasPagination = useMemo(() => totalPages > 1, [totalPages]);
+  const showEmpty = transactions.length === 0;
+
+  const goToPage = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", String(page));
+    router.replace(`${pathname}?${params.toString()}`);
+  };
+
+  const goToFilter = (filter: string) => {
+    const params = new URLSearchParams();
+    if (filter !== "all") params.set("filter", filter);
+    router.replace(`${pathname}?${params.toString()}`);
+  };
 
   /**
    * Elimina una orden y refresca la vista.
@@ -91,14 +118,6 @@ const HistoryView = ({
       setConfirmingId(null);
     }
   };
-
-  const filteredTransactions = transactions.filter((t) => {
-    if (activeFilter === "Todos") return true;
-    if (activeFilter === "Compras") return t.status === "ok";
-    if (activeFilter === "Fallidas") return t.status === "fail";
-    if (activeFilter === "Pendientes") return t.status === "pending";
-    return true;
-  });
 
   /**
    * Dispara el trigger de compra aleatoria.
@@ -168,16 +187,16 @@ const HistoryView = ({
         <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
           {FILTERS.map((f) => (
             <Pill 
-              key={f} 
-              active={activeFilter === f}
-              onClick={() => setActiveFilter(f)}
+              key={f.value} 
+              active={currentFilter === f.value}
+              onClick={() => goToFilter(f.value)}
             >
-              {f}
+              {f.label}
             </Pill>
           ))}
         </div>
         <Card padding={0}>
-          {filteredTransactions.map((t, i) => {
+          {transactions.map((t, i) => {
             const isPos = t.amount > 0;
             const failed = t.status === "fail";
             const pending = t.status === "pending";
@@ -189,7 +208,7 @@ const HistoryView = ({
               ? `${t.items[0].quantity}x ${t.items[0].productName}`
               : `${totalItems} productos`;
             return (
-              <div key={t.id} className={i < filteredTransactions.length - 1 ? "border-b border-line" : ""}>
+              <div key={t.id} className={i < transactions.length - 1 ? "border-b border-line" : ""}>
                 <div
                   className={`p-4 flex items-center gap-3.5 ${failed ? "opacity-60" : "opacity-100"} cursor-pointer`}
                   onClick={() => setExpandedId(isExpanded ? null : t.id)}
@@ -300,6 +319,33 @@ const HistoryView = ({
             );
           })}
         </Card>
+        {hasPagination && !showEmpty && (
+          <div className="mt-4 flex items-center justify-between">
+            <Button
+              size="sm"
+              variant="soft"
+              className="gap-2"
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage <= 1}
+            >
+              <Icon name="chevronLeft" size={14} />
+              Anterior
+            </Button>
+            <div className="text-[12px] text-ink-3">
+              Pagina {currentPage} de {totalPages}
+            </div>
+            <Button
+              size="sm"
+              variant="soft"
+              className="gap-2"
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage >= totalPages}
+            >
+              Siguiente
+              <Icon name="chevronRight" size={14} />
+            </Button>
+          </div>
+        )}
       </div>
       <ToastHost />
       {isAdmin && (

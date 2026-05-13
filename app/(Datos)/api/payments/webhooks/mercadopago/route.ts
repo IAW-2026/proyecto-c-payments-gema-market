@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Payment } from "mercadopago";
+import { revalidateTag } from "next/cache";
 import mercadoPagoClient from "@/app/lib/mercadopago";
 import {
   getOrdenDePagoById,
@@ -103,6 +104,16 @@ export async function POST(request: NextRequest) {
       if (internalStatus === "rejected" || internalStatus === "cancelled") {
         await notifyRejected({ orden: updatedOrden });
       }
+    }
+
+    revalidateTag(`orden-${paymentId}`, 'max')
+    revalidateTag(`ordenes-buyer-${updatedOrden.buyerId}`, 'max')
+    revalidateTag(`ordenes-count-${updatedOrden.buyerId}`, 'max')
+    revalidateTag('ordenes-admin', 'max')
+    revalidateTag('ordenes-list-admin', 'max')
+    revalidateTag('ordenes-count-all', 'max')
+    for (const item of updatedOrden.orders) {
+      revalidateTag(`debts-${item.sellerId}`, 'max')
     }
 
     return new NextResponse(null, { status: 200 });
