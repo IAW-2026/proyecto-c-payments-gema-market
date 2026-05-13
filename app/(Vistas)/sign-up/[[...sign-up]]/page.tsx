@@ -22,8 +22,8 @@ export default function SignUpPage() {
         </div>
         <div className="flex justify-center">
           <SignUp
-            fallbackRedirectUrl="/payments/history"
-            signInFallbackRedirectUrl="/payments/history"
+            fallbackRedirectUrl="/payments/history?page=1"
+            signInFallbackRedirectUrl="/payments/history?page=1"
             signInUrl="/sign-in"
             appearance={{
               elements: {

@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Icon } from "@/app/(Vistas)/payments/shared/components";
-import { getApiKeyHashAction } from "@/app/(Logica)/integrations/api-key-actions";
+import { getApiKeyHashAction } from "@/app/(Logica)/integrations/api-keyActions";
 import type { PaymentStatus } from "@/app/(Logica)/types/payments.types";
 import { isFinalApproved, isFinalFailed } from "@/app/lib/payment-status";
 /**

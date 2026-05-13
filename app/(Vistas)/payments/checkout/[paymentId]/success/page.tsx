@@ -1,4 +1,4 @@
-import { getOrdenDePagoById } from "@/app/(Logica)/services/ordenes-de-pago.service";
+import { getCachedOrdenDePagoById } from "@/app/(Logica)/services/ordenes-de-pago.service";
 import { notFound, redirect } from "next/navigation";
 import SuccessView from "./SuccessView";
 import { mapCheckoutItems } from "@/app/lib/checkout-mapping";
@@ -11,7 +11,7 @@ export default async function SuccessPage({
   params: Promise<{ paymentId: string }>;
 }) {
   const { paymentId } = await params;
-  const orden = await getOrdenDePagoById(paymentId);
+  const orden = await getCachedOrdenDePagoById(paymentId);
 
   if (!orden) return notFound();
 
