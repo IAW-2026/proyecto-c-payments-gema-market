@@ -19,6 +19,7 @@ import { isAdminPaymentsUser } from "@/app/lib/auth-utils";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 /**
  * Accion server para eliminar una orden.
@@ -69,11 +70,11 @@ function mapToHistoryTransaction(
 
 const PAGE_SIZE = 8;
 
-function parsePage(rawPage: string | string[] | undefined): number {
-  if (!rawPage) return 1;
+function getRequestedPage(rawPage: string | string[] | undefined): number | null {
+  if (!rawPage) return null;
   const value = Array.isArray(rawPage) ? rawPage[0] : rawPage;
   const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) ? parsed : 1;
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 /**
@@ -92,8 +93,8 @@ export default async function HistoryPage({
   const displayName =
     user?.fullName ?? user?.primaryEmailAddress?.emailAddress ?? "";
 
-  const hasPageParam = typeof searchParams?.page === "string";
-  const requestedPage = parsePage(searchParams?.page);
+  const requestedPage = getRequestedPage(searchParams?.page);
+  const rawPage = requestedPage ?? 1;
   const totalCount = isAdmin
     ? await getOrdenesDePagoTotalCount()
     : buyerId
@@ -101,9 +102,9 @@ export default async function HistoryPage({
       : 0;
 
   const totalPages = totalCount > 0 ? Math.ceil(totalCount / PAGE_SIZE) : 1;
-  const safePage = Math.min(Math.max(requestedPage, 1), totalPages);
+  const safePage = Math.min(Math.max(rawPage, 1), totalPages);
 
-  if (totalCount > 0 && (!hasPageParam || requestedPage !== safePage)) {
+  if (requestedPage !== null && totalCount > 0 && requestedPage !== safePage) {
     redirect(`/payments/history?page=${safePage}`);
   }
 

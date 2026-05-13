@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
 import { PayShell } from "@/app/(Vistas)/payments/components/PayShell";
 import { Card, Icon, Pill, Button, fmtARS, useToast } from "@/app/(Vistas)/payments/shared/components";
@@ -77,12 +77,15 @@ const HistoryView = ({
   const { signOut } = useClerk();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { push, ToastHost } = useToast();
   const hasPagination = useMemo(() => totalPages > 1, [totalPages]);
   const showEmpty = transactions.length === 0;
 
   const goToPage = (page: number) => {
-    router.replace(`${pathname}?page=${page}`);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", String(page));
+    router.replace(`${pathname}?${params.toString()}`);
   };
 
   /**
