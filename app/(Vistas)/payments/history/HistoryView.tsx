@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
 import { PayShell } from "@/app/(Vistas)/payments/components/PayShell";
 import { Card, Icon, Pill, Button, fmtARS, useToast } from "@/app/(Vistas)/payments/shared/components";
@@ -33,6 +33,9 @@ export interface HistoryViewProps {
   isAdmin?: boolean;
   displayName?: string;
   onDeleteOrden?: (paymentId: string) => Promise<void>;
+  currentPage?: number;
+  totalPages?: number;
+  pageSize?: number;
 }
 
 interface TriggerOrder {
@@ -62,6 +65,8 @@ const HistoryView = ({
   isAdmin = false,
   displayName,
   onDeleteOrden,
+  currentPage = 1,
+  totalPages = 1,
 }: HistoryViewProps) => {
   const [activeFilter, setActiveFilter] = useState("Todos");
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -71,7 +76,14 @@ const HistoryView = ({
   const [triggerLoading, setTriggerLoading] = useState(false);
   const { signOut } = useClerk();
   const router = useRouter();
+  const pathname = usePathname();
   const { push, ToastHost } = useToast();
+  const hasPagination = useMemo(() => totalPages > 1, [totalPages]);
+  const showEmpty = transactions.length === 0;
+
+  const goToPage = (page: number) => {
+    router.push(`${pathname}?page=${page}`);
+  };
 
   /**
    * Elimina una orden y refresca la vista.
@@ -300,6 +312,33 @@ const HistoryView = ({
             );
           })}
         </Card>
+        {hasPagination && !showEmpty && (
+          <div className="mt-4 flex items-center justify-between">
+            <Button
+              size="sm"
+              variant="soft"
+              className="gap-2"
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage <= 1}
+            >
+              <Icon name="chevronLeft" size={14} />
+              Anterior
+            </Button>
+            <div className="text-[12px] text-ink-3">
+              Pagina {currentPage} de {totalPages}
+            </div>
+            <Button
+              size="sm"
+              variant="soft"
+              className="gap-2"
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage >= totalPages}
+            >
+              Siguiente
+              <Icon name="chevronRight" size={14} />
+            </Button>
+          </div>
+        )}
       </div>
       <ToastHost />
       {isAdmin && (

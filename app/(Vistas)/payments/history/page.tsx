@@ -1,8 +1,10 @@
 import { currentUser } from "@clerk/nextjs/server";
 import {
   deleteOrderById,
-  getOrdenesDePago,
-  getOrdenesDePagoByBuyer,
+  getOrdenesDePagoByBuyerPaged,
+  getOrdenesDePagoByBuyerTotalCount,
+  getOrdenesDePagoPaged,
+  getOrdenesDePagoTotalCount,
 } from "@/app/(Logica)/services/ordenes-de-pago.service";
 import type { OrdenDePago } from "@/app/(Logica)/services/ordenes-de-pago.service";
 import HistoryView from "./HistoryView";
@@ -14,6 +16,7 @@ import {
   getUsuariosByIds,
 } from "@/app/(Logica)/services/usuario-sync.service";
 import { isAdminPaymentsUser } from "@/app/lib/auth-utils";
+import { redirect } from "next/navigation";
 
 /**
  * Accion server para eliminar una orden.
@@ -62,10 +65,23 @@ function mapToHistoryTransaction(
   };
 }
 
+const PAGE_SIZE = 8;
+
+function parsePage(rawPage: string | string[] | undefined): number {
+  if (!rawPage) return 1;
+  const value = Array.isArray(rawPage) ? rawPage[0] : rawPage;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : 1;
+}
+
 /**
  * Pagina de historial de pagos.
  */
-export default async function HistoryPage() {
+export default async function HistoryPage({
+  searchParams,
+}: {
+  searchParams?: { page?: string };
+}) {
   const user = await currentUser();
   const isAdmin = isAdminPaymentsUser(user);
 
@@ -74,11 +90,33 @@ export default async function HistoryPage() {
   const displayName =
     user?.fullName ?? user?.primaryEmailAddress?.emailAddress ?? "";
 
-  const ordenes = isAdmin
-    ? await getOrdenesDePago()
+  const requestedPage = parsePage(searchParams?.page);
+  const totalCount = isAdmin
+    ? await getOrdenesDePagoTotalCount()
     : buyerId
-      ? await getOrdenesDePagoByBuyer(buyerId)
-      : [];
+      ? await getOrdenesDePagoByBuyerTotalCount(buyerId)
+      : 0;
+
+  const totalPages = totalCount > 0 ? Math.ceil(totalCount / PAGE_SIZE) : 1;
+  const safePage = Math.min(Math.max(requestedPage, 1), totalPages);
+
+  if (totalCount > 0 && requestedPage !== safePage) {
+    redirect(`/payments/history?page=${safePage}`);
+  }
+
+  const ordenes = totalCount > 0
+    ? isAdmin
+      ? await getOrdenesDePagoPaged({
+          skip: (safePage - 1) * PAGE_SIZE,
+          take: PAGE_SIZE,
+        })
+      : buyerId
+        ? await getOrdenesDePagoByBuyerPaged(buyerId, {
+            skip: (safePage - 1) * PAGE_SIZE,
+            take: PAGE_SIZE,
+          })
+        : []
+    : [];
 
   const buyerNameMap = isAdmin
     ? new Map(
@@ -103,6 +141,9 @@ export default async function HistoryPage() {
       isAdmin={isAdmin}
       displayName={isAdmin ? "Admin" : displayName}
       onDeleteOrden={deleteOrdenDePagoAction}
+      currentPage={safePage}
+      totalPages={totalPages}
+      pageSize={PAGE_SIZE}
     />
   );
 }

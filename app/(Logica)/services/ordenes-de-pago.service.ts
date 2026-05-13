@@ -31,6 +31,16 @@ export type OrdenDePago = Omit<Prisma.OrdenDePagoGetPayload<Record<string, never
   status: PaymentStatus;
 };
 
+export interface OrdenesDePagoPagedResult {
+  rows: OrdenDePago[];
+  totalCount: number;
+}
+
+export interface OrdenesDePagoPageParams {
+  skip: number;
+  take: number;
+}
+
 /**
  * Parsea el campo `orders` de la DB de forma segura.
  * El adapter-pg de Prisma puede devolver campos Json como strings
@@ -110,6 +120,28 @@ export async function getOrdenesDePago(): Promise<OrdenDePago[]> {
 }
 
 /**
+ * Obtiene el total de órdenes de pago.
+ */
+export async function getOrdenesDePagoTotalCount(): Promise<number> {
+  return prisma.ordenDePago.count();
+}
+
+/**
+ * Obtiene órdenes de pago paginadas.
+ */
+export async function getOrdenesDePagoPaged(
+  params: OrdenesDePagoPageParams,
+): Promise<OrdenDePago[]> {
+  const rows = await prisma.ordenDePago.findMany({
+    orderBy: { createdAt: "desc" },
+    skip: params.skip,
+    take: params.take,
+  });
+
+  return rows.map((r) => ({ ...r, orders: parseOrders(r.orders), status: r.status as PaymentStatus }));
+}
+
+/**
  * Obtiene una orden de pago por su ID (payment_id).
  */
 export async function getOrdenDePagoById(
@@ -147,6 +179,34 @@ export async function getOrdenesDePagoByBuyer(
   const rows = await prisma.ordenDePago.findMany({
     where: { buyerId },
     orderBy: { createdAt: "desc" },
+  });
+
+  return rows.map((r) => ({ ...r, orders: parseOrders(r.orders), status: r.status as PaymentStatus }));
+}
+
+/**
+ * Obtiene el total de órdenes de pago de un comprador.
+ */
+export async function getOrdenesDePagoByBuyerTotalCount(
+  buyerId: string,
+): Promise<number> {
+  return prisma.ordenDePago.count({
+    where: { buyerId },
+  });
+}
+
+/**
+ * Obtiene órdenes de pago paginadas de un comprador.
+ */
+export async function getOrdenesDePagoByBuyerPaged(
+  buyerId: string,
+  params: OrdenesDePagoPageParams,
+): Promise<OrdenDePago[]> {
+  const rows = await prisma.ordenDePago.findMany({
+    where: { buyerId },
+    orderBy: { createdAt: "desc" },
+    skip: params.skip,
+    take: params.take,
   });
 
   return rows.map((r) => ({ ...r, orders: parseOrders(r.orders), status: r.status as PaymentStatus }));
