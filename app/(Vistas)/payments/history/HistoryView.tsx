@@ -82,7 +82,7 @@ const HistoryView = ({
   const showEmpty = transactions.length === 0;
 
   const goToPage = (page: number) => {
-    router.push(`${pathname}?page=${page}`);
+    router.replace(`${pathname}?page=${page}`);
   };
 
   /**

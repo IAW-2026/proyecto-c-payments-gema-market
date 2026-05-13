@@ -18,6 +18,8 @@ import {
 import { isAdminPaymentsUser } from "@/app/lib/auth-utils";
 import { redirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 /**
  * Accion server para eliminar una orden.
  */
@@ -90,6 +92,7 @@ export default async function HistoryPage({
   const displayName =
     user?.fullName ?? user?.primaryEmailAddress?.emailAddress ?? "";
 
+  const hasPageParam = typeof searchParams?.page === "string";
   const requestedPage = parsePage(searchParams?.page);
   const totalCount = isAdmin
     ? await getOrdenesDePagoTotalCount()
@@ -100,7 +103,7 @@ export default async function HistoryPage({
   const totalPages = totalCount > 0 ? Math.ceil(totalCount / PAGE_SIZE) : 1;
   const safePage = Math.min(Math.max(requestedPage, 1), totalPages);
 
-  if (totalCount > 0 && requestedPage !== safePage) {
+  if (totalCount > 0 && (!hasPageParam || requestedPage !== safePage)) {
     redirect(`/payments/history?page=${safePage}`);
   }
 
