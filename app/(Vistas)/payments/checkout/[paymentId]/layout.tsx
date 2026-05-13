@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { MercadoPagoProvider } from "@/app/(Vistas)/payments/components/MercadoPagoProvider";
-import { getOrdenDePagoById } from "@/app/(Logica)/services/ordenes-de-pago.service";
+import { getCachedOrdenDePagoById } from "@/app/(Logica)/services/ordenes-de-pago.service";
 import { ensurePaymentOwnership } from "@/app/lib/checkout-utils";
 
 /**
@@ -16,7 +16,7 @@ export default async function CheckoutLayout({
   params: Promise<{ paymentId: string }>;
 }) {
   const { paymentId } = await params;
-  const orden = await getOrdenDePagoById(paymentId);
+  const orden = await getCachedOrdenDePagoById(paymentId);
 
   if (!orden) return notFound();
 

@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { connection } from "next/server";
 import { generateUlid } from "@/app/lib/ulid";
 import prisma from "@/app/lib/prisma";
 import { getApiKeyHash } from "@/app/(Logica)/integrations/api-key";
 import { POST as createOrderHandler } from "../ordenes-de-pago/route";
+
 /**
  * Dispara una compra aleatoria para pruebas locales.
  */
 export async function GET(request: NextRequest) {
+  await connection();
   try {
     const appUrl = request.nextUrl.origin;
 

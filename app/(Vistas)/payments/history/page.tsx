@@ -1,4 +1,5 @@
 import { currentUser } from "@clerk/nextjs/server";
+import { revalidateTag } from "next/cache";
 import {
   deleteOrderById,
   getOrdenesDePagoByBuyerPaged,
@@ -19,15 +20,21 @@ import {
 import { isAdminPaymentsUser } from "@/app/lib/auth-utils";
 import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+
+
 
 /**
  * Accion server para eliminar una orden.
  */
 async function deleteOrdenDePagoAction(paymentId: string) {
   "use server";
-  await deleteOrderById(paymentId);
+  const result = await deleteOrderById(paymentId);
+  revalidateTag(`orden-${paymentId}`, 'max')
+  revalidateTag(`ordenes-buyer-${result.buyerId}`, 'max')
+  revalidateTag(`ordenes-count-${result.buyerId}`, 'max')
+  revalidateTag('ordenes-admin', 'max')
+  revalidateTag('ordenes-list-admin', 'max')
+  revalidateTag('ordenes-count-all', 'max')
 }
 
 /**
