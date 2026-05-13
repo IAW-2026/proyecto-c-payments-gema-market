@@ -20,14 +20,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const reservedUntil = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-  console.log("Simulando reserva exitosa en Shipping App:", {
+  console.log("Simulando liberación exitosa en Shipping App:", {
     ...body,
-    reserved_until: reservedUntil,
   });
 
-  return NextResponse.json(
-    { ok: true, reserved_until: reservedUntil },
-    { status: 200 },
-  );
+  return NextResponse.json({ ok: true }, { status: 200 });
 }
