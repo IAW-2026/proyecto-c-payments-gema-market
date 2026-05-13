@@ -83,8 +83,9 @@ function getRequestedPage(rawPage: string | string[] | undefined): number | null
 export default async function HistoryPage({
   searchParams,
 }: {
-  searchParams?: { page?: string };
+  searchParams: Promise<{ page?: string }>;
 }) {
+  const { page: pageStr } = await searchParams;
   const user = await currentUser();
   const isAdmin = isAdminPaymentsUser(user);
 
@@ -93,7 +94,7 @@ export default async function HistoryPage({
   const displayName =
     user?.fullName ?? user?.primaryEmailAddress?.emailAddress ?? "";
 
-  const requestedPage = getRequestedPage(searchParams?.page);
+  const requestedPage = getRequestedPage(pageStr);
   const rawPage = requestedPage ?? 1;
   const totalCount = isAdmin
     ? await getOrdenesDePagoTotalCount()
