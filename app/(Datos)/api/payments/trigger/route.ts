@@ -3,10 +3,11 @@ import { connection } from "next/server";
 import { generateUlid } from "@/app/lib/ulid";
 import prisma from "@/app/lib/prisma";
 import { getApiKeyHash } from "@/app/(Logica)/integrations/api-key";
+import type { CreateOrdenDePagoRequest } from "@/app/(Logica)/types/payments.types";
 import { POST as createOrderHandler } from "../ordenes-de-pago/route";
 
 /**
- * Dispara una compra aleatoria para pruebas locales.
+ * Dispara una compra aleatoria simulando lo que haría la Buyer App.
  */
 export async function GET(request: NextRequest) {
   await connection();
@@ -36,24 +37,21 @@ export async function GET(request: NextRequest) {
 
     const buyer = getRandomUser();
     const buyerId = buyer.id;
-    
+
     const numOrders = Math.floor(Math.random() * 3) + 1;
-    const orders = [];
+    const orders: CreateOrdenDePagoRequest["orders"] = [];
 
     for (let i = 0; i < numOrders; i++) {
       const quantity = Math.floor(Math.random() * 2) + 1;
       const unitPrice = Math.floor(Math.random() * 200) + 50;
-      
+
       const productId = generateUlid("prod");
       const orderId = generateUlid("ord");
       const seller = getRandomUser();
       const sellerId = seller.id;
-      
+
       const quoteId = generateUlid("qte");
-      const quoteData = {
-        quote_id: quoteId,
-        shipping_price: Math.floor(Math.random() * 150) + 30,
-      };
+      const shippingPrice = Math.floor(Math.random() * 150) + 30;
 
       const productNames = ["Silla de madera", "Placard", "Mesa ratona", "Escritorio", "Estantería", "Lampara de pie", "Lampara de mesa", "Mesa de comedor", "Sillon esquinero"];
       const productName = productNames[i % productNames.length];
@@ -65,24 +63,24 @@ export async function GET(request: NextRequest) {
         product_name: productName,
         quantity,
         unit_price: unitPrice,
-        ...(quoteData ? { quote: quoteData } : {})
+        quote: { quote_id: quoteId, shipping_price: shippingPrice },
       });
     }
 
-    const payload = {
+    const payload: CreateOrdenDePagoRequest = {
       buyer_id: buyerId,
       orders,
       currency: "ARS",
-      return_url: `${appUrl}/payments/history`
+      return_url: `${appUrl}/payments/history`,
     };
 
     const apiKey = await getApiKeyHash();
-    
+
     const mockRequest = new NextRequest(new URL(`${appUrl}/api/payments/ordenes-de-pago`), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key-hash": apiKey
+        "x-api-key-hash": apiKey,
       },
       body: JSON.stringify(payload),
     });
@@ -97,11 +95,11 @@ export async function GET(request: NextRequest) {
       } catch {
         errorData = textResponse;
       }
-      
+
       return NextResponse.json({
         message: "Error al disparar la orden de pago",
         payload,
-        error: errorData
+        error: errorData,
       }, { status: response ? response.status : 500 });
     }
 
@@ -112,14 +110,14 @@ export async function GET(request: NextRequest) {
       buyer_name: buyer.fullName ?? buyer.email ?? buyer.clerkUserId,
       simulated_payload: payload,
       api_response: result,
-      checkout_url: result.checkout_url
+      checkout_url: result.checkout_url,
     }, { status: 201 });
 
   } catch (error) {
     console.error("Error en Trigger:", error);
     return NextResponse.json({
       error: "Ocurrió un error en el trigger.",
-      details: String(error)
+      details: String(error),
     }, { status: 500 });
   }
 }
