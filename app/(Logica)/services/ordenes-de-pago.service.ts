@@ -36,6 +36,30 @@ export interface OrdenesDePagoPagedResult {
   totalCount: number;
 }
 
+export type PaymentStatusFilter = "all" | "approved" | "pending" | "failed";
+
+export function statusFilterToPrismaWhere(filter: PaymentStatusFilter): { status?: string | { in: string[] } } {
+  switch (filter) {
+    case "approved":
+      return { status: "approved" };
+    case "pending":
+      return { status: { in: ["pending", "in_process", "in_mediation"] } };
+    case "failed":
+      return { status: { in: ["rejected", "cancelled", "refunded", "charged_back"] } };
+    case "all":
+    default:
+      return {};
+  }
+}
+
+export const FILTER_VALUES: PaymentStatusFilter[] = ["all", "approved", "pending", "failed"];
+
+export function normalizeFilter(raw: string | undefined | null): PaymentStatusFilter {
+  if (!raw) return "all";
+  const lower = raw.toLowerCase();
+  return FILTER_VALUES.includes(lower as PaymentStatusFilter) ? (lower as PaymentStatusFilter) : "all";
+}
+
 export interface OrdenesDePagoPageParams {
   skip: number;
   take: number;
@@ -120,19 +144,25 @@ export async function getOrdenesDePago(): Promise<OrdenDePago[]> {
 }
 
 /**
- * Obtiene el total de órdenes de pago.
+ * Obtiene el total de órdenes de pago, opcionalmente filtrado.
  */
-export async function getOrdenesDePagoTotalCount(): Promise<number> {
-  return prisma.ordenDePago.count();
+export async function getOrdenesDePagoTotalCount(
+  filter: PaymentStatusFilter = "all",
+): Promise<number> {
+  return prisma.ordenDePago.count({
+    where: statusFilterToPrismaWhere(filter),
+  });
 }
 
 /**
- * Obtiene órdenes de pago paginadas.
+ * Obtiene órdenes de pago paginadas, opcionalmente filtradas.
  */
 export async function getOrdenesDePagoPaged(
   params: OrdenesDePagoPageParams,
+  filter: PaymentStatusFilter = "all",
 ): Promise<OrdenDePago[]> {
   const rows = await prisma.ordenDePago.findMany({
+    where: statusFilterToPrismaWhere(filter),
     orderBy: { createdAt: "desc" },
     skip: params.skip,
     take: params.take,
@@ -185,25 +215,27 @@ export async function getOrdenesDePagoByBuyer(
 }
 
 /**
- * Obtiene el total de órdenes de pago de un comprador.
+ * Obtiene el total de órdenes de pago de un comprador, opcionalmente filtrado.
  */
 export async function getOrdenesDePagoByBuyerTotalCount(
   buyerId: string,
+  filter: PaymentStatusFilter = "all",
 ): Promise<number> {
   return prisma.ordenDePago.count({
-    where: { buyerId },
+    where: { ...statusFilterToPrismaWhere(filter), buyerId },
   });
 }
 
 /**
- * Obtiene órdenes de pago paginadas de un comprador.
+ * Obtiene órdenes de pago paginadas de un comprador, opcionalmente filtradas.
  */
 export async function getOrdenesDePagoByBuyerPaged(
   buyerId: string,
   params: OrdenesDePagoPageParams,
+  filter: PaymentStatusFilter = "all",
 ): Promise<OrdenDePago[]> {
   const rows = await prisma.ordenDePago.findMany({
-    where: { buyerId },
+    where: { ...statusFilterToPrismaWhere(filter), buyerId },
     orderBy: { createdAt: "desc" },
     skip: params.skip,
     take: params.take,
