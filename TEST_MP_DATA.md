@@ -1,7 +1,10 @@
 # Datos de Prueba para Mercado Pago 🚀
 
 A continuación, se presentan los usuarios de prueba proporcionados por Mercado Pago para simular diferentes flujos en el entorno de desarrollo y staging. 
-
+### ACLARACION:
+En la pasarela de mercado pago al ir a pagar, no aparece como modo "sandbox" porque se estan usando credenciales de produccion, pero de una cuenta de prueba en modo vendedor. Esto es asi porque el Brick <Wallet/> requiere siempre credenciales de produccion. Pero de todas formas, solo se puede pagar con las cuentas de prueba manifestadas a continuacion, si se intenta pagar con una cuenta real, MercadoPago va a dar error.
+Fuente : https://www.mercadopago.com.ar/developers/es/docs/checkout-bricks/integration-test/test-payment-flow (Pago con redireccion a mercado pago) 
+  
 ---
 
 ## 🛒 Compradores
