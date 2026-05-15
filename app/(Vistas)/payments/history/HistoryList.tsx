@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Card, Icon, Pill, Button, fmtARS, useToast } from "@/app/(Vistas)/payments/shared/components";
 import type { HistoryTransaction } from "./types";
+import HistorySkeleton from "./HistorySkeleton";
 
 export interface HistoryListProps {
   transactions: HistoryTransaction[];
@@ -32,6 +33,8 @@ const HistoryList = ({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [showLoading, setShowLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -39,16 +42,45 @@ const HistoryList = ({
   const hasPagination = useMemo(() => totalPages > 1, [totalPages]);
   const showEmpty = transactions.length === 0;
 
+  const prefetchUrl = useCallback(
+    (url: string) => {
+      router.prefetch(url);
+    },
+    [router],
+  );
+
+  useEffect(() => {
+    if (showLoading) setShowLoading(false);
+  }, [searchParams, showLoading]);
+
   const goToPage = (page: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", String(page));
-    router.replace(`${pathname}?${params.toString()}`);
+    setShowLoading(true);
+    startTransition(() => {
+      router.replace(`${pathname}?${params.toString()}`);
+    });
+  };
+
+  const prefetchPage = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", String(page));
+    prefetchUrl(`${pathname}?${params.toString()}`);
   };
 
   const goToFilter = (filter: string) => {
     const params = new URLSearchParams();
     if (filter !== "all") params.set("filter", filter);
-    router.replace(`${pathname}?${params.toString()}`);
+    setShowLoading(true);
+    startTransition(() => {
+      router.replace(`${pathname}?${params.toString()}`);
+    });
+  };
+
+  const prefetchFilter = (filter: string) => {
+    const params = new URLSearchParams();
+    if (filter !== "all") params.set("filter", filter);
+    prefetchUrl(`${pathname}?${params.toString()}`);
   };
 
   const handleDelete = async (paymentId: string) => {
@@ -67,6 +99,10 @@ const HistoryList = ({
     }
   };
 
+  if (showLoading || isPending) {
+    return <HistorySkeleton />;
+  }
+
   return (
     <div className="p-4 min-[600px]:p-5 lgx:p-6">
       <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
@@ -75,6 +111,8 @@ const HistoryList = ({
             key={f.value}
             active={currentFilter === f.value}
             onClick={() => goToFilter(f.value)}
+            onMouseEnter={() => prefetchFilter(f.value)}
+            onFocus={() => prefetchFilter(f.value)}
           >
             {f.label}
           </Pill>
@@ -255,6 +293,8 @@ const HistoryList = ({
             variant="soft"
             className="gap-2"
             onClick={() => goToPage(currentPage - 1)}
+            onMouseEnter={() => prefetchPage(currentPage - 1)}
+            onFocus={() => prefetchPage(currentPage - 1)}
             disabled={currentPage <= 1}
           >
             <Icon name="chevronLeft" size={14} />
@@ -268,6 +308,8 @@ const HistoryList = ({
             variant="soft"
             className="gap-2"
             onClick={() => goToPage(currentPage + 1)}
+            onMouseEnter={() => prefetchPage(currentPage + 1)}
+            onFocus={() => prefetchPage(currentPage + 1)}
             disabled={currentPage >= totalPages}
           >
             Siguiente
