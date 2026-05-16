@@ -1,3 +1,4 @@
+/*  eslint-disable  */
 import React, { useState, useCallback } from "react";
 //Componentes compartidos entre las apps. Diseñado por Claude design. Se ignora los errores de tipado any.
 /**

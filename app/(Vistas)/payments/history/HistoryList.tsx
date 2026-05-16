@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Card, Icon, Pill, Button, fmtARS, useToast } from "@/app/(Vistas)/payments/shared/components";
 import type { HistoryTransaction } from "./types";
@@ -33,7 +33,6 @@ const HistoryList = ({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
-  const [showLoading, setShowLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const pathname = usePathname();
@@ -49,14 +48,9 @@ const HistoryList = ({
     [router],
   );
 
-  useEffect(() => {
-    if (showLoading) setShowLoading(false);
-  }, [searchParams, showLoading]);
-
   const goToPage = (page: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", String(page));
-    setShowLoading(true);
     startTransition(() => {
       router.replace(`${pathname}?${params.toString()}`);
     });
@@ -71,7 +65,6 @@ const HistoryList = ({
   const goToFilter = (filter: string) => {
     const params = new URLSearchParams();
     if (filter !== "all") params.set("filter", filter);
-    setShowLoading(true);
     startTransition(() => {
       router.replace(`${pathname}?${params.toString()}`);
     });
@@ -99,7 +92,7 @@ const HistoryList = ({
     }
   };
 
-  if (showLoading || isPending) {
+  if (isPending) {
     return <HistorySkeleton />;
   }
 

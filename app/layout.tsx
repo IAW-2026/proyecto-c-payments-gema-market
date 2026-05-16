@@ -17,7 +17,6 @@ export default async function RootLayout({
   return (
     <ClerkProvider
       signInUrl="/sign-in"
-      signUpUrl="/sign-up"
     >
       <SyncUser />
       <html
