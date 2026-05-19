@@ -4,7 +4,7 @@ import { useRouter, useParams } from "next/navigation";
 import { Icon } from "@/app/(Vistas)/payments/shared/components";
 import { getApiKeyHashAction } from "@/app/(Logica)/integrations/api-keyActions";
 import type { PaymentStatus } from "@/app/(Logica)/types/payments.types";
-import { isFinalApproved, isFinalFailed } from "@/app/lib/payment-status";
+import { isFinalApproved, isFinalFailed, isPendingStatus } from "@/app/lib/payment-status";
 /**
  * Pantalla de espera con polling del estado de pago.
  */
@@ -40,6 +40,8 @@ const Processing = () => {
           router.push(`/payments/checkout/${paymentId}/success`);
         } else if (data.status && isFinalFailed(data.status)) {
           router.push(`/payments/checkout/${paymentId}/failed`);
+        } else if (data.status && isPendingStatus(data.status)) {
+          router.push(`/payments/checkout/${paymentId}/pending`);
         }
       } catch {}
     };
