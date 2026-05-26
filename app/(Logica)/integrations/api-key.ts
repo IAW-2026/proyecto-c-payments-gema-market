@@ -1,7 +1,6 @@
 import crypto from "crypto";
 import process from "process";
-
-
+import { NextResponse } from "next/server";
 
 /**
  * Obtiene la API key interna.
@@ -36,7 +35,5 @@ export function validateApiKey(request: Request): boolean {
  * Respuesta estandar de no autorizado para APIs internas.
  */
 export function apiKeyResponse(): NextResponse {
-  return NextResponse.json({ error: "Unauthorized " }, { status: 401 });
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 }
-
-import { NextResponse } from "next/server";
