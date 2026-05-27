@@ -12,7 +12,7 @@ export default function NotFound() {
         <h2 className="text-2xl font-semibold mb-3">Página no encontrada</h2>
         <p className="text-ink-3 mb-8">Lo sentimos, la página que buscas no existe o ha sido movida.</p>
         <Link 
-          href="/payments/methods" 
+          href="/payments/history" 
           className="inline-flex items-center justify-center px-8 h-12 bg-forest text-paper rounded-full font-medium transition-transform active:scale-95"
         >
           Volver a pagos
