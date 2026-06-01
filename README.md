@@ -178,6 +178,11 @@ El sistema soporta el rol **admin_payments**:
 
 Las cuentas de prueba para Mercado Pago se encuentran en `TEST_MP_DATA.md`, incluyen credenciales de acceso, tarjetas de prueba y códigos para forzar resultados (APRO, OTHE, CONT, etc.).
 
+Para acceder como usuario normal las credenciales son:
+**Usuario**: `payments.user+clerk_test@unihousing.com`
+
+**Contraseña** : `userUNS2026`
+La clave de verificacion es `424242`
 Para acceder como administrador las credenciales son:
 (Acceder desde google con las mismas credenciales para evitar el codigo de verificacion)
 **Usuario**: `payments.admin.unihousing@gmail.com`
