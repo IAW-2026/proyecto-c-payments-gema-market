@@ -498,7 +498,7 @@ export async function searchOrdenesDePagoPaged(
   }
 
   if (params.buyerId) {
-    addCondition(`"buyer_id" = ${paramIndex}`, params.buyerId);
+    addCondition(`"buyer_id" = $${paramIndex}`, params.buyerId);
   }
 
   if (params.filter !== "all") {
