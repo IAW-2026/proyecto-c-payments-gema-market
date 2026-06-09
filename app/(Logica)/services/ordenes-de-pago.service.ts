@@ -28,10 +28,26 @@ export interface UpdateOrdenDePagoStatusParams {
   paidAt?: Date;
 }
 
-export type OrdenDePago = Omit<Prisma.OrdenDePagoGetPayload<Record<string, never>>, "orders" | "status"> & {
+export type OrdenDePago = Omit<Prisma.OrdenDePagoGetPayload<Record<string, never>>, "orders" | "status" | "totalAmount" | "fee"> & {
   orders: OrderItem[];
   status: PaymentStatus;
+  totalAmount: number;
+  fee: number;
 };
+
+/**
+ * Convierte un row plano de Prisma (con Decimal en totalAmount/fee)
+ * al tipo OrdenDePago con valores number, orders parseados y status tipado.
+ */
+export function rowToOrdenDePago(row: Prisma.OrdenDePagoGetPayload<Record<string, never>>): OrdenDePago {
+  return {
+    ...row,
+    totalAmount: Number(row.totalAmount),
+    fee: Number(row.fee),
+    orders: parseOrders(row.orders),
+    status: row.status as PaymentStatus,
+  };
+}
 
 export interface OrdenesDePagoPagedResult {
   rows: OrdenDePago[];
@@ -111,7 +127,7 @@ export async function createOrdenDePago(
     },
   });
 
-  return { ...row, orders: parseOrders(row.orders), status: row.status as PaymentStatus };
+  return rowToOrdenDePago(row);
 }
 
 /**
@@ -132,7 +148,7 @@ export async function updateOrdenDePagoStatus(
     },
   });
 
-  return { ...row, orders: parseOrders(row.orders), status: row.status as PaymentStatus };
+  return rowToOrdenDePago(row);
 }
 
 /**
@@ -146,7 +162,7 @@ export async function getOrdenesDePago(): Promise<OrdenDePago[]> {
     orderBy: { createdAt: "desc" },
   });
 
-  return rows.map((r) => ({ ...r, orders: parseOrders(r.orders), status: r.status as PaymentStatus }));
+  return rows.map(rowToOrdenDePago);
 }
 
 /**
@@ -180,7 +196,7 @@ export async function getOrdenesDePagoPaged(
     take: params.take,
   });
 
-  return rows.map((r) => ({ ...r, orders: parseOrders(r.orders), status: r.status as PaymentStatus }));
+  return rows.map(rowToOrdenDePago);
 }
 
 /**
@@ -194,7 +210,7 @@ export async function getOrdenDePagoById(
     where: { id: paymentId },
   });
 
-  return row ? { ...row, orders: parseOrders(row.orders), status: row.status as PaymentStatus } : null;
+  return row ? rowToOrdenDePago(row) : null;
 }
 
 /**
@@ -223,7 +239,7 @@ export async function updateOrdenDePagoPreference(
     data: { mpPreferenceId },
   });
 
-  return { ...row, orders: parseOrders(row.orders), status: row.status as PaymentStatus };
+  return rowToOrdenDePago(row);
 }
 
 /**
@@ -240,7 +256,7 @@ export async function getOrdenesDePagoByBuyer(
     orderBy: { createdAt: "desc" },
   });
 
-  return rows.map((r) => ({ ...r, orders: parseOrders(r.orders), status: r.status as PaymentStatus }));
+  return rows.map(rowToOrdenDePago);
 }
 
 /**
@@ -276,7 +292,7 @@ export async function getOrdenesDePagoByBuyerPaged(
     take: params.take,
   });
 
-  return rows.map((r) => ({ ...r, orders: parseOrders(r.orders), status: r.status as PaymentStatus }));
+  return rows.map(rowToOrdenDePago);
 }
 
 /**
@@ -541,8 +557,8 @@ export async function searchOrdenesDePagoPaged(
   const rows: OrdenDePago[] = dataRows.map((r) => ({
     id: r.id,
     buyerId: r.buyer_id,
-    totalAmount: Number(r.total_amount) as unknown as OrdenDePago["totalAmount"],
-    fee: Number(r.fee) as unknown as OrdenDePago["fee"],
+    totalAmount: Number(r.total_amount),
+    fee: Number(r.fee),
     currency: r.currency,
     status: r.status as PaymentStatus,
     createdAt: r.created_at,

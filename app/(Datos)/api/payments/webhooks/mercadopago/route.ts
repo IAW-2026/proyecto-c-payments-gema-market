@@ -5,8 +5,7 @@ import mercadoPagoClient from "@/app/lib/mercadopago";
 import prisma from "@/app/lib/prisma";
 import {
   getOrdenDePagoById,
-  parseOrders,
-  updateOrdenDePagoStatus,
+  rowToOrdenDePago,
 } from "@/app/(Logica)/services/ordenes-de-pago.service";
 import { createTransaccion } from "@/app/(Logica)/services/transacciones.service";
 import type { PaymentStatus } from "@/app/(Logica)/types/payments.types";
@@ -99,11 +98,7 @@ export async function POST(request: NextRequest) {
           ...(internalStatus === "approved" && { paidAt: new Date() }),
         },
       });
-      updatedOrden = {
-        ...row,
-        orders: parseOrders(row.orders),
-        status: row.status as PaymentStatus,
-      };
+      updatedOrden = rowToOrdenDePago(row);
     } catch (e) {
       if ((e as { code?: string })?.code === "P2025") {
         // Another webhook already handled this status transition

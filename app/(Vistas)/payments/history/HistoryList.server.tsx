@@ -48,7 +48,7 @@ function mapToHistoryTransaction(
     id: orden.mpPaymentId ?? orden.id,
     paymentId: orden.id,
     date: formatDate(orden.paidAt ?? orden.createdAt),
-    desc: `Pago ${orden.id}`,
+    desc: `${orden.id}`,
     amount: -Number(orden.totalAmount),
     method: "Mercado Pago",
     status: isFailed ? "fail" : isPending ? "pending" : "ok",
