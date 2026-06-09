@@ -24,7 +24,7 @@ export async function syncCurrentUser() {
 
     return prisma.usuario.create({
       data: {
-        id: generateUlid("usr_"),
+        id: generateUlid("usr"),
         clerkUserId: clerkUser.id,
         email,
         fullName,
