@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
 
     const response: CreateOrdenDePagoResponse = {
       payment_id: orden.id,
-      checkout_url: `/payments/checkout/${orden.id}/methods`,
+      checkout_url: `${process.env.APP_URL}/payments/checkout/${orden.id}/methods`,
       status: orden.status,
     };
 

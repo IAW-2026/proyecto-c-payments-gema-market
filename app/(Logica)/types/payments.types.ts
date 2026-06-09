@@ -112,3 +112,46 @@ export interface SellerDebtsResponse {
   total_debt: number;
   items: SellerDebtItem[];
 }
+
+/**
+ * Respuesta de estadisticas para el panel de admin.
+ */
+export interface AdminStatsResponse {
+  total_payments: number;
+  payments_by_status: Record<string, number>;
+  total_volume: number;
+  currency: string;
+  approval_rate: number;
+}
+
+/**
+ * Item individual de orden de pago para admin paginado.
+ */
+export interface AdminOrdenDePagoItem {
+  payment_id: string;
+  buyer_id: string;
+  orders: {
+    order_id: string;
+    seller_id: string;
+    product_id: string;
+    quote_id?: string;
+    amount: number;
+  }[];
+  total_amount: number;
+  currency: string;
+  status: PaymentStatus;
+  created_at: string;
+  paid_at: string | null;
+}
+
+/**
+ * Respuesta paginada de ordenes de pago para admin.
+ */
+export interface AdminOrdenesDePagoResponse {
+  items: AdminOrdenDePagoItem[];
+  page: number;
+  page_size: number;
+  total: number;
+  sort_by: string;
+  order: string;
+}

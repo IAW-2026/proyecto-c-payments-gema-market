@@ -4,6 +4,7 @@ import {
   getOrdenesDePagoPaged,
   getOrdenesDePagoTotalCount,
   normalizeFilter,
+  searchOrdenesDePagoPaged,
 } from "@/app/(Logica)/services/ordenes-de-pago.service";
 import type { OrdenDePago, PaymentStatusFilter } from "@/app/(Logica)/services/ordenes-de-pago.service";
 import { formatDate } from "@/app/lib/util";
@@ -66,13 +67,52 @@ export default async function HistoryListServer({
 }: {
   buyerId: string | null;
   isAdmin: boolean;
-  searchParams: { page?: string; filter?: string };
+  searchParams: { page?: string; filter?: string; q?: string };
   onDeleteOrden?: (paymentId: string) => Promise<void>;
 }) {
-  const { page: pageStr, filter: filterRaw } = searchParams;
+  const { page: pageStr, filter: filterRaw, q } = searchParams;
   const safeFilter: PaymentStatusFilter = normalizeFilter(filterRaw);
+  const hasSearch = !!q?.trim();
   const requestedPage = getRequestedPage(pageStr);
   const rawPage = requestedPage ?? 1;
+
+  if (hasSearch) {
+    const result = await searchOrdenesDePagoPaged({
+      buyerId: isAdmin ? undefined : (buyerId ?? undefined),
+      q: q!.trim(),
+      filter: safeFilter,
+      skip: (rawPage - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    });
+
+    const totalCount = result.totalCount;
+    const totalPages = totalCount > 0 ? Math.ceil(totalCount / PAGE_SIZE) : 1;
+    const safePage = Math.min(Math.max(rawPage, 1), totalPages);
+
+    const buyerNameMap = isAdmin
+      ? new Map(
+          (await getUsuariosByIds(
+            Array.from(new Set(result.rows.map((o) => o.buyerId))),
+          )).map((u) => [u.id, u.fullName ?? u.email ?? u.clerkUserId]),
+        )
+      : new Map();
+
+    const transactions = result.rows.map((orden) =>
+      mapToHistoryTransaction(orden, isAdmin ? buyerNameMap.get(orden.buyerId) : undefined),
+    );
+
+    return (
+      <HistoryList
+        transactions={transactions}
+        isAdmin={isAdmin}
+        onDeleteOrden={onDeleteOrden}
+        currentPage={safePage}
+        totalPages={totalPages}
+        currentFilter={safeFilter}
+        currentSearch={q}
+      />
+    );
+  }
 
   const totalCount = isAdmin
     ? await getOrdenesDePagoTotalCount(safeFilter)
@@ -134,6 +174,7 @@ export default async function HistoryListServer({
       currentPage={safePage}
       totalPages={totalPages}
       currentFilter={safeFilter}
+      currentSearch={q}
     />
   );
 }
