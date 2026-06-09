@@ -341,3 +341,214 @@ export async function getDebtsBySeller(sellerId: string, startDate?: Date) {
     items: sellerDebts,
   };
 }
+
+/* ------------------------------------------------------------------ */
+/*  Admin: paginated query with filters and JSONB raw SQL             */
+/* ------------------------------------------------------------------ */
+
+export interface AdminOrdenesQueryParams {
+  page: number;
+  pageSize: number;
+  buyerId?: string;
+  sellerId?: string;
+  status?: string;
+  dateFrom?: Date;
+  dateTo?: Date;
+  sortBy: string;
+  order: "asc" | "desc";
+}
+
+export interface AdminOrdenRow {
+  id: string;
+  buyerId: string;
+  orders: OrderItem[];
+  totalAmount: number;
+  currency: string;
+  status: string;
+  createdAt: Date;
+  paidAt: Date | null;
+}
+
+export async function getAdminOrdenesPaged(
+  params: AdminOrdenesQueryParams,
+): Promise<{ rows: AdminOrdenRow[]; total: number }> {
+  const conditions: string[] = [];
+  const queryParams: unknown[] = [];
+  let paramIndex = 1;
+
+  function addCondition(sql: string, ...vals: unknown[]) {
+    conditions.push(sql);
+    for (const v of vals) {
+      queryParams.push(v);
+      paramIndex++;
+    }
+  }
+
+  if (params.buyerId) {
+    addCondition(`"buyer_id" = ${paramIndex}`, params.buyerId);
+  }
+
+  if (params.status) {
+    const rawStatus = params.status.trim().toLowerCase();
+    if (rawStatus === "pending") {
+      addCondition(
+        `"status" IN ($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2})`,
+        "pending",
+        "in_process",
+        "in_mediation",
+      );
+    } else if (rawStatus === "failed") {
+      addCondition(
+        `"status" IN ($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3})`,
+        "rejected",
+        "cancelled",
+        "refunded",
+        "charged_back",
+      );
+    } else {
+      addCondition(`"status" = $${paramIndex}`, rawStatus);
+    }
+  }
+
+  if (params.dateFrom) {
+    addCondition(      `"created_at" >= ${paramIndex}`, params.dateFrom);
+  }
+  if (params.dateTo) {
+    addCondition(`"created_at" <= ${paramIndex}`, params.dateTo);
+  }
+
+  if (params.sellerId) {
+    addCondition(
+      `EXISTS (SELECT 1 FROM jsonb_array_elements("orders") AS elem WHERE elem->>'sellerId' = $${paramIndex})`,
+      params.sellerId,
+    );
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  const sortColumnMap: Record<string, string> = {
+    createdAt: "created_at",
+    totalAmount: "total_amount",
+    status: "status",
+  };
+  const sortColumn = sortColumnMap[params.sortBy] ?? "created_at";
+  const sortDir = params.order === "asc" ? "ASC" : "DESC";
+
+  const offset = (params.page - 1) * params.pageSize;
+
+  const countSql = `SELECT COUNT(*)::int AS total FROM "orden_de_pago" ${whereClause}`;
+  const dataSql = `SELECT id, "buyer_id", "orders", "total_amount", currency, status, "created_at", "paid_at" FROM "orden_de_pago" ${whereClause} ORDER BY "${sortColumn}" ${sortDir} LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+  queryParams.push(params.pageSize, offset);
+
+  const [countResult]: Array<{ total: number }> = await prisma.$queryRawUnsafe(
+    countSql,
+    ...queryParams.slice(0, -2),
+  );
+
+  const dataRows: Array<{
+    id: string;
+    buyer_id: string;
+    orders: unknown;
+    total_amount: number;
+    currency: string;
+    status: string;
+    created_at: Date;
+    paid_at: Date | null;
+  }> = await prisma.$queryRawUnsafe(dataSql, ...queryParams);
+
+  const rows = dataRows.map((r) => ({
+    id: r.id,
+    buyerId: r.buyer_id,
+    orders: parseOrders(r.orders),
+    totalAmount: Number(r.total_amount),
+    currency: r.currency,
+    status: r.status,
+    createdAt: r.created_at,
+    paidAt: r.paid_at,
+  }));
+
+  return { rows, total: countResult.total };
+}
+
+/* ------------------------------------------------------------------ */
+/*  History search: raw SQL for JSONB product name lookup             */
+/* ------------------------------------------------------------------ */
+
+export interface SearchOrdenesParams {
+  buyerId?: string;
+  q?: string;
+  filter: PaymentStatusFilter;
+  skip: number;
+  take: number;
+}
+
+export async function searchOrdenesDePagoPaged(
+  params: SearchOrdenesParams,
+): Promise<{ rows: OrdenDePago[]; totalCount: number }> {
+  const conditions: string[] = [];
+  const queryParams: unknown[] = [];
+  let paramIndex = 1;
+
+  function addCondition(sql: string, ...vals: unknown[]) {
+    conditions.push(sql);
+    for (const v of vals) {
+      queryParams.push(v);
+      paramIndex++;
+    }
+  }
+
+  if (params.buyerId) {
+    addCondition(`"buyer_id" = ${paramIndex}`, params.buyerId);
+  }
+
+  if (params.filter !== "all") {
+    const pw = statusFilterToPrismaWhere(params.filter);
+    const statusVal = pw.status;
+    if (typeof statusVal === "string") {
+      addCondition(`"status" = $${paramIndex}`, statusVal);
+    } else if (statusVal && "in" in statusVal) {
+      const statuses = statusVal.in as string[];
+      const placeholders = statuses.map((_, i) => `$${paramIndex + i}`).join(", ");
+      addCondition(`"status" IN (${placeholders})`, ...statuses);
+    }
+  }
+
+  if (params.q?.trim()) {
+    const term = `%${params.q.trim()}%`;
+    addCondition(
+      `EXISTS (SELECT 1 FROM jsonb_array_elements("orders") AS elem WHERE elem->>'productName' ILIKE $${paramIndex})`,
+      term,
+    );
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const offset = params.skip;
+
+  const countSql = `SELECT COUNT(*)::int AS total FROM "orden_de_pago" ${whereClause}`;
+  const dataSql = `SELECT id, "buyer_id", "orders", "total_amount", fee, currency, status, "created_at", "paid_at", "mp_preference_id", "mp_payment_id", "mp_status_detail" FROM "orden_de_pago" ${whereClause} ORDER BY "created_at" DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+  queryParams.push(params.take, offset);
+
+  const [countResult]: Array<{ total: number }> = await prisma.$queryRawUnsafe(countSql, ...queryParams.slice(0, -2));
+  const dataRows: Array<{
+    id: string; buyer_id: string; orders: unknown; total_amount: number; fee: number;
+    currency: string; status: string; created_at: Date; paid_at: Date | null;
+    mp_preference_id: string | null; mp_payment_id: string | null; mp_status_detail: string | null;
+  }> = await prisma.$queryRawUnsafe(dataSql, ...queryParams);
+
+  const rows: OrdenDePago[] = dataRows.map((r) => ({
+    id: r.id,
+    buyerId: r.buyer_id,
+    totalAmount: Number(r.total_amount) as unknown as OrdenDePago["totalAmount"],
+    fee: Number(r.fee) as unknown as OrdenDePago["fee"],
+    currency: r.currency,
+    status: r.status as PaymentStatus,
+    createdAt: r.created_at,
+    paidAt: r.paid_at,
+    orders: parseOrders(r.orders),
+    mpPreferenceId: r.mp_preference_id,
+    mpPaymentId: r.mp_payment_id,
+    mpStatusDetail: r.mp_status_detail,
+  }));
+
+  return { rows, totalCount: countResult.total };
+}
