@@ -32,7 +32,7 @@ async function deleteOrdenDePagoAction(paymentId: string) {
 export default async function HistoryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; filter?: string }>;
+  searchParams: Promise<{ page?: string; filter?: string; q?: string }>;
 }) {
   const resolvedParams = await searchParams;
   const user = await currentUser();
