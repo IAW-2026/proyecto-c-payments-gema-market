@@ -23,7 +23,6 @@
 # misc
 .DS_Store
 *.pem
-app/(Datos)/mock/data/*
 /.vscode/
 TODO.txt
 # debug

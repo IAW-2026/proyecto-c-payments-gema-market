@@ -177,7 +177,6 @@ Aunque el proyecto usa App Router de Next.js, la organización conceptual se div
 
 -   **Auth**: Clerk está presente en el modelo pero la segmentación del historial por usuario autenticado es parcial.
 -   **Webhook**: No implementa validación de firma (`X-Signature`) todavía.
--   **Mocks**: El proyecto ha migrado a integraciones reales; no usar mocks locales para nuevas funcionalidades.
 -   **Callback vs Webhook**: Nunca confiar en el callback para actualizar el estado en la base de datos. Usar siempre el webhook.
 
 ---

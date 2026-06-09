@@ -51,10 +51,7 @@ El proyecto sigue una organización **MVC (Modelo-Vista-Controlador)** adaptada 
 │   │       │   ├── callback/mercadopago/
 │   │       │   ├── debts/[sellerId]/
 │   │       │   └── trigger/
-│   │       ├── seller/         # Mocks de Seller App
-│   │       ├── buyer/          # Mocks de Buyer App
-│   │       └── shipping/       # Mocks de Shipping App
-│   │
+│   │       │
 │   ├── (Logica)/               # Reglas de negocio
 │   │   ├── services/           # Órdenes, MP preference, transacciones, sync
 │   │   ├── integrations/       # Clientes HTTP para Buyer/Seller/Shipping

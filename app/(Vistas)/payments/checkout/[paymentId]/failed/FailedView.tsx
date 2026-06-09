@@ -23,6 +23,7 @@ export interface FailedViewProps {
   attemptId: string;
   items: FailedItem[];
   totalShipping: number;
+  buyerAppUrl: string;
 }
 
 /**
@@ -36,6 +37,7 @@ const FailedView = ({
   attemptId,
   items,
   totalShipping,
+  buyerAppUrl,
 }: FailedViewProps) => {
   const router = useRouter();
   const details = [
@@ -121,7 +123,7 @@ const FailedView = ({
                 variant="secondary"
                 full
                 icon="arrowLeft"
-                onClick={() => router.push("/payments/history")}
+                onClick={() => { window.location.href = buyerAppUrl; }}
               >
                 Volver a buyer
               </Button>

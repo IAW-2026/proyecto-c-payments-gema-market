@@ -18,10 +18,11 @@ export interface PendingViewProps {
   statusDetail: string;
   items: PendingItem[];
   totalShipping: number;
+  buyerAppUrl: string;
 }
 
 const PendingView = ({
-  paymentId, totalAmount, date, transactionId, statusDetail, items, totalShipping,
+  paymentId, totalAmount, date, transactionId, statusDetail, items, totalShipping, buyerAppUrl,
 }: PendingViewProps) => {
   const router = useRouter();
   const details = [
@@ -84,7 +85,7 @@ const PendingView = ({
               </div>
             </Card>
             <div className="sticky bottom-0 bg-paper/95 backdrop-blur-[12px] border-t border-line p-4 -mx-4 mt-auto flex gap-2.5 max-[599px]:fixed max-[599px]:left-0 max-[599px]:right-0 max-[599px]:bottom-0 max-[599px]:z-[80] max-[599px]:bg-paper/[.98] max-[599px]:shadow-[0_-10px_28px_rgba(40,30,15,.08)] max-[599px]:mx-0 max-[420px]:flex-col lgx:!static lgx:!bg-transparent lgx:backdrop-blur-none lgx:!pt-[18px] lgx:!px-0 lgx:!pb-0 lgx:!mx-0">
-              <Button variant="secondary" full icon="arrowLeft" onClick={() => router.push("/payments/history")}>Volver al historial</Button>
+              <Button variant="secondary" full icon="arrowLeft" onClick={() => { window.location.href = buyerAppUrl; }}>Volver a buyer</Button>
             </div>
           </div>
         </div>

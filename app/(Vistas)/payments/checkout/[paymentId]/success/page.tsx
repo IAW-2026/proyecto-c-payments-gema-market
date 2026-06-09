@@ -25,6 +25,7 @@ export default async function SuccessPage({
   }
 
   const { items, totalShipping } = mapCheckoutItems(orden.orders);
+  const buyerAppUrl = orden.returnUrl ?? process.env.BUYER_APP_URL ?? "https://proyecto-c-buyer-gema-market.vercel.app";
 
   return (
     <SuccessView
@@ -35,6 +36,7 @@ export default async function SuccessPage({
       transactionId={orden.mpPaymentId ?? "—"}
       items={items}
       totalShipping={totalShipping}
+      buyerAppUrl={buyerAppUrl}
     />
   );
 }

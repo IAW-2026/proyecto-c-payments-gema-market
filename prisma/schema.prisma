@@ -34,6 +34,7 @@ model OrdenDePago {
   mpStatusDetail  String?  @map("mp_status_detail") @db.VarChar(255)
   createdAt       DateTime @default(now()) @map("created_at")
   paidAt          DateTime? @map("paid_at")
+  returnUrl       String?   @map("return_url")
 
   transacciones   Transaccion[]
 

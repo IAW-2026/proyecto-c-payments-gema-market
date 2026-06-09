@@ -17,6 +17,7 @@ export interface CreateOrdenDePagoParams {
   fee: number;
   currency: string;
   mpPreferenceId?: string;
+  returnUrl?: string;
 }
 
 export interface UpdateOrdenDePagoStatusParams {
@@ -27,10 +28,26 @@ export interface UpdateOrdenDePagoStatusParams {
   paidAt?: Date;
 }
 
-export type OrdenDePago = Omit<Prisma.OrdenDePagoGetPayload<Record<string, never>>, "orders" | "status"> & {
+export type OrdenDePago = Omit<Prisma.OrdenDePagoGetPayload<Record<string, never>>, "orders" | "status" | "totalAmount" | "fee"> & {
   orders: OrderItem[];
   status: PaymentStatus;
+  totalAmount: number;
+  fee: number;
 };
+
+/**
+ * Convierte un row plano de Prisma (con Decimal en totalAmount/fee)
+ * al tipo OrdenDePago con valores number, orders parseados y status tipado.
+ */
+export function rowToOrdenDePago(row: Prisma.OrdenDePagoGetPayload<Record<string, never>>): OrdenDePago {
+  return {
+    ...row,
+    totalAmount: Number(row.totalAmount),
+    fee: Number(row.fee),
+    orders: parseOrders(row.orders),
+    status: row.status as PaymentStatus,
+  };
+}
 
 export interface OrdenesDePagoPagedResult {
   rows: OrdenDePago[];
@@ -71,7 +88,7 @@ export interface OrdenesDePagoPageParams {
  * El adapter-pg de Prisma puede devolver campos Json como strings
  * en vez de objetos ya parseados. Este helper maneja ambos casos.
  */
-function parseOrders(raw: unknown): OrderItem[] {
+export function parseOrders(raw: unknown): OrderItem[] {
   if (typeof raw === "string") {
     try {
       return JSON.parse(raw) as OrderItem[];
@@ -93,7 +110,7 @@ function parseOrders(raw: unknown): OrderItem[] {
 export async function createOrdenDePago(
   params: CreateOrdenDePagoParams,
 ): Promise<OrdenDePago> {
-  const { buyerId, orders, totalAmount, fee, currency, mpPreferenceId } =
+  const { buyerId, orders, totalAmount, fee, currency, mpPreferenceId, returnUrl } =
     params;
 
   const row = await prisma.ordenDePago.create({
@@ -106,10 +123,11 @@ export async function createOrdenDePago(
       currency,
       status: "pending",
       mpPreferenceId: mpPreferenceId ?? null,
+      returnUrl: returnUrl ?? null,
     },
   });
 
-  return { ...row, orders: parseOrders(row.orders), status: row.status as PaymentStatus };
+  return rowToOrdenDePago(row);
 }
 
 /**
@@ -130,7 +148,7 @@ export async function updateOrdenDePagoStatus(
     },
   });
 
-  return { ...row, orders: parseOrders(row.orders), status: row.status as PaymentStatus };
+  return rowToOrdenDePago(row);
 }
 
 /**
@@ -144,7 +162,7 @@ export async function getOrdenesDePago(): Promise<OrdenDePago[]> {
     orderBy: { createdAt: "desc" },
   });
 
-  return rows.map((r) => ({ ...r, orders: parseOrders(r.orders), status: r.status as PaymentStatus }));
+  return rows.map(rowToOrdenDePago);
 }
 
 /**
@@ -178,7 +196,7 @@ export async function getOrdenesDePagoPaged(
     take: params.take,
   });
 
-  return rows.map((r) => ({ ...r, orders: parseOrders(r.orders), status: r.status as PaymentStatus }));
+  return rows.map(rowToOrdenDePago);
 }
 
 /**
@@ -192,7 +210,7 @@ export async function getOrdenDePagoById(
     where: { id: paymentId },
   });
 
-  return row ? { ...row, orders: parseOrders(row.orders), status: row.status as PaymentStatus } : null;
+  return row ? rowToOrdenDePago(row) : null;
 }
 
 /**
@@ -221,7 +239,7 @@ export async function updateOrdenDePagoPreference(
     data: { mpPreferenceId },
   });
 
-  return { ...row, orders: parseOrders(row.orders), status: row.status as PaymentStatus };
+  return rowToOrdenDePago(row);
 }
 
 /**
@@ -238,7 +256,7 @@ export async function getOrdenesDePagoByBuyer(
     orderBy: { createdAt: "desc" },
   });
 
-  return rows.map((r) => ({ ...r, orders: parseOrders(r.orders), status: r.status as PaymentStatus }));
+  return rows.map(rowToOrdenDePago);
 }
 
 /**
@@ -274,7 +292,7 @@ export async function getOrdenesDePagoByBuyerPaged(
     take: params.take,
   });
 
-  return rows.map((r) => ({ ...r, orders: parseOrders(r.orders), status: r.status as PaymentStatus }));
+  return rows.map(rowToOrdenDePago);
 }
 
 /**
@@ -516,7 +534,7 @@ export async function searchOrdenesDePagoPaged(
   if (params.q?.trim()) {
     const term = `%${params.q.trim()}%`;
     addCondition(
-      `EXISTS (SELECT 1 FROM jsonb_array_elements("orders") AS elem WHERE elem->>'productName' ILIKE $${paramIndex})`,
+      `("id" ILIKE $${paramIndex} OR "mp_payment_id" ILIKE $${paramIndex} OR EXISTS (SELECT 1 FROM jsonb_array_elements("orders") AS elem WHERE (elem->>'orderId' ILIKE $${paramIndex} OR elem->>'productName' ILIKE $${paramIndex})))`,
       term,
     );
   }
@@ -525,7 +543,7 @@ export async function searchOrdenesDePagoPaged(
   const offset = params.skip;
 
   const countSql = `SELECT COUNT(*)::int AS total FROM "orden_de_pago" ${whereClause}`;
-  const dataSql = `SELECT id, "buyer_id", "orders", "total_amount", fee, currency, status, "created_at", "paid_at", "mp_preference_id", "mp_payment_id", "mp_status_detail" FROM "orden_de_pago" ${whereClause} ORDER BY "created_at" DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+  const dataSql = `SELECT id, "buyer_id", "orders", "total_amount", fee, currency, status, "created_at", "paid_at", "mp_preference_id", "mp_payment_id", "mp_status_detail", "return_url" FROM "orden_de_pago" ${whereClause} ORDER BY "created_at" DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
   queryParams.push(params.take, offset);
 
   const [countResult]: Array<{ total: number }> = await prisma.$queryRawUnsafe(countSql, ...queryParams.slice(0, -2));
@@ -533,13 +551,14 @@ export async function searchOrdenesDePagoPaged(
     id: string; buyer_id: string; orders: unknown; total_amount: number; fee: number;
     currency: string; status: string; created_at: Date; paid_at: Date | null;
     mp_preference_id: string | null; mp_payment_id: string | null; mp_status_detail: string | null;
+    return_url: string | null;
   }> = await prisma.$queryRawUnsafe(dataSql, ...queryParams);
 
   const rows: OrdenDePago[] = dataRows.map((r) => ({
     id: r.id,
     buyerId: r.buyer_id,
-    totalAmount: Number(r.total_amount) as unknown as OrdenDePago["totalAmount"],
-    fee: Number(r.fee) as unknown as OrdenDePago["fee"],
+    totalAmount: Number(r.total_amount),
+    fee: Number(r.fee),
     currency: r.currency,
     status: r.status as PaymentStatus,
     createdAt: r.created_at,
@@ -548,6 +567,7 @@ export async function searchOrdenesDePagoPaged(
     mpPreferenceId: r.mp_preference_id,
     mpPaymentId: r.mp_payment_id,
     mpStatusDetail: r.mp_status_detail,
+    returnUrl: r.return_url,
   }));
 
   return { rows, totalCount: countResult.total };

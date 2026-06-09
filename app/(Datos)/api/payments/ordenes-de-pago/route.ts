@@ -109,6 +109,7 @@ export async function POST(request: NextRequest) {
       totalAmount,
       fee,
       currency: body.currency,
+      returnUrl: body.return_url,
     });
 
     const preferenceResult = await createPreference({

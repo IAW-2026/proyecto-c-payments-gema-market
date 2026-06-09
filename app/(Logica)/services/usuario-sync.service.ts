@@ -24,7 +24,7 @@ export async function syncCurrentUser() {
 
     return prisma.usuario.create({
       data: {
-        id: generateUlid("usr_"),
+        id: generateUlid("usr"),
         clerkUserId: clerkUser.id,
         email,
         fullName,
@@ -55,5 +55,18 @@ export async function getUsuariosByIds(ids: string[]) {
   if (!ids.length) return [];
   return prisma.usuario.findMany({
     where: { id: { in: ids } },
+  });
+}
+
+/**
+ * Obtiene usuarios locales por una lista de Clerk user IDs.
+ */
+export async function getUsuariosByClerkUserIds(clerkUserIds: string[]) {
+  'use cache'
+  cacheTag('usuarios')
+  cacheLife({ stale: 60, revalidate: 300, expire: 600 })
+  if (!clerkUserIds.length) return [];
+  return prisma.usuario.findMany({
+    where: { clerkUserId: { in: clerkUserIds } },
   });
 }

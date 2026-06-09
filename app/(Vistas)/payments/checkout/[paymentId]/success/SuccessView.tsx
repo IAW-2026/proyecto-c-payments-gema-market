@@ -23,6 +23,7 @@ export interface SuccessViewProps {
   transactionId: string;
   items: SuccessItem[];
   totalShipping: number;
+  buyerAppUrl: string;
 }
 
 /**
@@ -36,6 +37,7 @@ const SuccessView = ({
   transactionId,
   items,
   totalShipping,
+  buyerAppUrl,
 }: SuccessViewProps) => {
   const router = useRouter();
   const details = [
@@ -116,7 +118,7 @@ const SuccessView = ({
                 variant="secondary"
                 full
                 icon="arrowLeft"
-                onClick={() => router.push("/payments/history")}
+                onClick={() => { window.location.href = buyerAppUrl; }}
               >
                 Volver a buyer
               </Button>

@@ -9,7 +9,7 @@ import {
 import type { OrdenDePago, PaymentStatusFilter } from "@/app/(Logica)/services/ordenes-de-pago.service";
 import { formatDate } from "@/app/lib/util";
 import { isFinalFailed, isPendingStatus } from "@/app/lib/payment-status";
-import { getUsuariosByIds } from "@/app/(Logica)/services/usuario-sync.service";
+import { getUsuariosByClerkUserIds } from "@/app/(Logica)/services/usuario-sync.service";
 import HistoryList from "./HistoryList";
 import type { HistoryTransaction, HistoryTransactionItem } from "./types";
 import { redirect } from "next/navigation";
@@ -48,7 +48,7 @@ function mapToHistoryTransaction(
     id: orden.mpPaymentId ?? orden.id,
     paymentId: orden.id,
     date: formatDate(orden.paidAt ?? orden.createdAt),
-    desc: `Pago ${orden.id}`,
+    desc: `${orden.id}`,
     amount: -Number(orden.totalAmount),
     method: "Mercado Pago",
     status: isFailed ? "fail" : isPending ? "pending" : "ok",
@@ -91,9 +91,9 @@ export default async function HistoryListServer({
 
     const buyerNameMap = isAdmin
       ? new Map(
-          (await getUsuariosByIds(
+          (await getUsuariosByClerkUserIds(
             Array.from(new Set(result.rows.map((o) => o.buyerId))),
-          )).map((u) => [u.id, u.fullName ?? u.email ?? u.clerkUserId]),
+          )).map((u) => [u.clerkUserId, u.fullName ?? u.email ?? u.clerkUserId]),
         )
       : new Map();
 
@@ -152,10 +152,10 @@ export default async function HistoryListServer({
   const buyerNameMap = isAdmin
     ? new Map(
         (
-          await getUsuariosByIds(
+          await getUsuariosByClerkUserIds(
             Array.from(new Set(ordenes.map((o) => o.buyerId))),
           )
-        ).map((u) => [u.id, u.fullName ?? u.email ?? u.clerkUserId]),
+        ).map((u) => [u.clerkUserId, u.fullName ?? u.email ?? u.clerkUserId]),
       )
     : new Map();
 
