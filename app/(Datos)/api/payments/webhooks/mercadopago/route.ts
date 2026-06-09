@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { Payment } from "mercadopago";
 import { revalidateTag } from "next/cache";
 import mercadoPagoClient from "@/app/lib/mercadopago";
+import prisma from "@/app/lib/prisma";
 import {
   getOrdenDePagoById,
+  parseOrders,
   updateOrdenDePagoStatus,
 } from "@/app/(Logica)/services/ordenes-de-pago.service";
 import { createTransaccion } from "@/app/(Logica)/services/transacciones.service";
@@ -75,20 +77,45 @@ export async function POST(request: NextRequest) {
     const internalStatus: PaymentStatus =
       statusMap[mpPayment.status ?? ""] ?? "pending";
 
-    const updatedOrden = await updateOrdenDePagoStatus({
-      paymentId,
-      status: internalStatus,
-      mpPaymentId,
-      mpStatusDetail: mpPayment.status_detail ?? undefined,
-      paidAt: internalStatus === "approved" ? new Date() : undefined,
-    });
-
     const payloadToSave =
       Object.keys(body).length > 0
         ? body
         : { queryParams: Object.fromEntries(url.searchParams) };
 
     const action = typeof body.action === "string" ? body.action : undefined;
+
+    // Atomic update with optimistic lock on status — prevents duplicate notifications
+    let updatedOrden;
+    try {
+      const row = await prisma.ordenDePago.update({
+        where: {
+          id: paymentId,
+          status: prevStatus ?? undefined,
+        },
+        data: {
+          status: internalStatus,
+          ...(mpPaymentId != null && { mpPaymentId }),
+          ...(mpPayment.status_detail != null && { mpStatusDetail: mpPayment.status_detail }),
+          ...(internalStatus === "approved" && { paidAt: new Date() }),
+        },
+      });
+      updatedOrden = {
+        ...row,
+        orders: parseOrders(row.orders),
+        status: row.status as PaymentStatus,
+      };
+    } catch (e) {
+      if ((e as { code?: string })?.code === "P2025") {
+        // Another webhook already handled this status transition
+        await createTransaccion({
+          paymentId,
+          eventType: action ?? eventType ?? "payment",
+          payloadJson: payloadToSave,
+        });
+        return new NextResponse(null, { status: 200 });
+      }
+      throw e;
+    }
 
     await createTransaccion({
       paymentId,
