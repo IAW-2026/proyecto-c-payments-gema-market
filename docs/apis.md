@@ -4,9 +4,46 @@
 
 Documentar cada endpoint que una app expone para ser consumido por otra app del sistema. Este contrato debe estar acordado por todos los integrantes antes de comenzar la Etapa 2.
 
+#### `GET /api/payments/admin/stats/timeseries`
+- **Consumido por**: Analytics Dashboard.
+- **Descripción**: serie temporal de payments, agrupada por intervalo. Habilita la curva de volumen en Analytics.
+- **Query params**: `granularity` (`day`, `week`, `month`; default: `day`), `metric` (`count`, `total_volume`; default: `count`), `field` (`created_at`, `paid_at`; default: `created_at`), `date_from`, `date_to`.
+- **Response 200**:
+```json
+{
+  "granularity": "day",
+  "metric": "count",
+  "series": [
+    { "bucket": "2026-06-01T00:00:00.000Z", "value": 15 },
+    { "bucket": "2026-06-02T00:00:00.000Z", "value": 22 }
+  ]
+}
+```
+
+#### `GET /api/payments/admin/usuarios`
+- **Consumido por**: Control Plane.
+- **Descripción**: listado paginado de usuarios del sistema. Vista consolidada para administración.
+- **Query params**: `q` (búsqueda por email o fullName), `page`, `page_size`, `sort_by` (`created_at`, `email`, `full_name`), `order` (`asc`, `desc`).
+- **Response 200**:
+```json
+{
+  "items": [
+    {
+      "user_id": "usr_01HXYZ...",
+      "clerk_user_id": "user_01HXYZ...",
+      "email": "carlos@ejemplo.com",
+      "full_name": "Carlos Pérez",
+      "created_at": "2026-04-17T14:30:00Z"
+    }
+  ],
+  "page": 1,
+  "page_size": 20,
+  "total": 300
+}
+```
+
 ---
 
-## Convenciones Generales
 
 - **Formato de nombres**: todos los campos JSON en `snake_case` (ej: `user_id`, `product_id`, `order_id`, `payment_id`, `shipping_id`). Prohibido mezclar `camelCase`.
 - **Identificador correlacional**: `order_id` se genera en la Buyer App al iniciar la compra y se propaga como referencia a Seller, Payments y Shipping.
@@ -546,7 +583,7 @@ Estados soportados (mapeo Mercado Pago Sandbox): `pending`, `in_process`, `appro
 
 ## Endpoints Administrativos (Control Plane / Analytics)
 
-> **Autenticación**: todos los endpoints de esta sección requieren un JWT de Clerk con `"admin" in roles`. Las apps deben validar este claim antes de procesar la solicitud. Los endpoints son consumidos exclusivamente por el Control Plane y el Analytics Dashboard (Etapa 3).
+> **Autenticación**: todos los endpoints de esta sección requieren el header `x-api-key-hash` con el SHA-256 hash de la `INTERNAL_API_KEY` compartida. Las apps deben enviar este hash en cada request. Los endpoints son consumidos exclusivamente por el Control Plane y el Analytics Dashboard (Etapa 3).
 
 > **Contrato de respuesta paginada estándar**: todos los endpoints de listado siguen la misma estructura de respuesta con soporte para paginación, filtrado y ordenamiento.
 

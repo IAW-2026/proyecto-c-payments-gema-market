@@ -1,4 +1,5 @@
 import prisma from "@/app/lib/prisma";
+import type { TimeseriesGranularity, TimeseriesMetric, TimeseriesBucket } from "@/app/(Logica)/types/payments.types";
 
 export interface AdminStatsResult {
   totalPayments: number;
@@ -57,5 +58,73 @@ export async function getAdminStats(
     totalVolume,
     currency: "ARS",
     approvalRate,
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Timeseries: aggregated counts/volume over time                    */
+/* ------------------------------------------------------------------ */
+
+const GRANULARITY_MAP: Record<string, string> = {
+  day: "day",
+  week: "week",
+  month: "month",
+};
+
+/**
+ * Obtiene series temporales de payments, agrupadas por intervalo.
+ * @param granularity  "day" | "week" | "month"
+ * @param metric       "count" | "total_volume"
+ * @param dateFrom     Fecha de inicio (opcional)
+ * @param dateTo       Fecha de fin (opcional)
+ * @param field        Campo de fecha: "created_at" | "paid_at" (default: "created_at")
+ */
+export async function getStatsTimeseries(
+  granularity: TimeseriesGranularity,
+  metric: TimeseriesMetric,
+  dateFrom?: Date,
+  dateTo?: Date,
+  field: "created_at" | "paid_at" = "created_at",
+): Promise<{ granularity: string; metric: string; series: TimeseriesBucket[] }> {
+  const trunc = GRANULARITY_MAP[granularity] ?? "day";
+  const dateColumn = field === "paid_at" ? '"paid_at"' : '"created_at"';
+  const conditions: string[] = [`${dateColumn} IS NOT NULL`];
+  const queryParams: unknown[] = [];
+  let paramIndex = 1;
+
+  function addCondition(sql: string, ...vals: unknown[]) {
+    conditions.push(sql);
+    for (const v of vals) {
+      queryParams.push(v);
+      paramIndex++;
+    }
+  }
+
+  if (dateFrom) {
+    addCondition(`${dateColumn} >= $${paramIndex}`, dateFrom);
+  }
+  if (dateTo) {
+    addCondition(`${dateColumn} <= $${paramIndex}`, dateTo);
+  }
+
+  const whereClause = `WHERE ${conditions.join(" AND ")}`;
+
+  const valueExpr =
+    metric === "total_volume"
+      ? `SUM("total_amount")::float`
+      : `COUNT(*)::int`;
+
+  const sql = `SELECT DATE_TRUNC('${trunc}', ${dateColumn}) AS bucket, ${valueExpr} AS value FROM "orden_de_pago" ${whereClause} GROUP BY bucket ORDER BY bucket`;
+
+  const rows: Array<{ bucket: Date; value: number }> =
+    await prisma.$queryRawUnsafe(sql, ...queryParams);
+
+  return {
+    granularity: trunc,
+    metric,
+    series: rows.map((r) => ({
+      bucket: r.bucket.toISOString(),
+      value: Number(r.value),
+    })),
   };
 }

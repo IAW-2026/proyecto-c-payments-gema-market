@@ -125,6 +125,47 @@ export interface AdminStatsResponse {
 }
 
 /**
+ * Item individual de usuario para admin paginado.
+ */
+export interface AdminUsuarioItem {
+  user_id: string;
+  clerk_user_id: string;
+  email: string | null;
+  full_name: string | null;
+  created_at: string;
+}
+
+/**
+ * Respuesta paginada de usuarios para admin.
+ */
+export interface AdminUsuariosResponse {
+  items: AdminUsuarioItem[];
+  page: number;
+  page_size: number;
+  total: number;
+}
+
+export type TimeseriesGranularity = "day" | "week" | "month";
+export type TimeseriesMetric = "count" | "total_volume";
+
+/**
+ * Bucket individual de serie temporal.
+ */
+export interface TimeseriesBucket {
+  bucket: string;
+  value: number;
+}
+
+/**
+ * Respuesta de serie temporal para stats admin.
+ */
+export interface AdminTimeseriesResponse {
+  granularity: string;
+  metric: string;
+  series: TimeseriesBucket[];
+}
+
+/**
  * Item individual de orden de pago para admin paginado.
  */
 export interface AdminOrdenDePagoItem {
