@@ -1,7 +1,6 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { revalidateTag } from "next/cache";
 import { deleteOrderById } from "@/app/(Logica)/services/ordenes-de-pago.service";
-import { getUsuarioByClerkUserId } from "@/app/(Logica)/services/usuario-sync.service";
 import { isAdminPaymentsUser } from "@/app/lib/auth-utils";
 import HistoryShell from "./HistoryShell";
 import HistoryListServer from "./HistoryList.server";
@@ -32,14 +31,13 @@ async function deleteOrdenDePagoAction(paymentId: string) {
 export default async function HistoryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; filter?: string }>;
+  searchParams: Promise<{ page?: string; filter?: string; q?: string }>;
 }) {
   const resolvedParams = await searchParams;
   const user = await currentUser();
   const isAdmin = isAdminPaymentsUser(user);
 
-  const usuario = user?.id ? await getUsuarioByClerkUserId(user.id) : null;
-  const buyerId = usuario?.id ?? null;
+  const buyerId = user?.id ?? null;
   const displayName =
     user?.fullName ?? user?.primaryEmailAddress?.emailAddress ?? "";
   return (

@@ -25,6 +25,7 @@ export default async function FailedPage({
   }
 
   const { items, totalShipping } = mapCheckoutItems(orden.orders);
+  const buyerAppUrl = orden.returnUrl ?? process.env.BUYER_APP_URL ?? "https://buyer.unihousing.app";
 
   return (
     <FailedView
@@ -35,6 +36,7 @@ export default async function FailedPage({
       attemptId={orden.mpPaymentId ?? "—"}
       items={items}
       totalShipping={totalShipping}
+      buyerAppUrl={buyerAppUrl}
     />
   );
 }

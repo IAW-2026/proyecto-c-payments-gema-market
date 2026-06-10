@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Card, Icon, Pill, Button, fmtARS, useToast } from "@/app/(Vistas)/payments/shared/components";
 import type { HistoryTransaction } from "./types";
@@ -13,6 +13,7 @@ export interface HistoryListProps {
   currentPage?: number;
   totalPages?: number;
   currentFilter?: string;
+  currentSearch?: string;
 }
 
 const FILTERS: { label: string; value: string }[] = [
@@ -29,15 +30,23 @@ const HistoryList = ({
   currentPage = 1,
   totalPages = 1,
   currentFilter = "all",
+  currentSearch = "",
 }: HistoryListProps) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [searchInput, setSearchInput] = useState(currentSearch);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { push, ToastHost } = useToast();
+
+  // Sync searchInput cuando currentSearch cambia por navegación externa
+  useEffect(() => {
+    setSearchInput(currentSearch);
+  }, [currentSearch]);
   const hasPagination = useMemo(() => totalPages > 1, [totalPages]);
   const showEmpty = transactions.length === 0;
 
@@ -63,17 +72,36 @@ const HistoryList = ({
   };
 
   const goToFilter = (filter: string) => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(searchParams.toString());
     if (filter !== "all") params.set("filter", filter);
+    else params.delete("filter");
     startTransition(() => {
       router.replace(`${pathname}?${params.toString()}`);
     });
   };
 
   const prefetchFilter = (filter: string) => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(searchParams.toString());
     if (filter !== "all") params.set("filter", filter);
+    else params.delete("filter");
     prefetchUrl(`${pathname}?${params.toString()}`);
+  };
+
+  const handleSearch = (value: string) => {
+    setSearchInput(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (value.trim()) {
+        params.set("q", value.trim());
+      } else {
+        params.delete("q");
+      }
+      params.delete("page");
+      startTransition(() => {
+        router.replace(`${pathname}?${params.toString()}`);
+      });
+    }, 800);
   };
 
   const handleDelete = async (paymentId: string) => {
@@ -98,6 +126,27 @@ const HistoryList = ({
 
   return (
     <div className="p-4 min-[600px]:p-5 lgx:p-6">
+      <div className="relative mb-4">
+        <input
+          type="text"
+          placeholder="Buscar por producto..."
+          className="w-full h-10 pl-9 pr-3 rounded-xl bg-bone border border-line text-[13px] text-ink placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all"
+          value={searchInput}
+          onChange={(e) => handleSearch(e.target.value)}
+        />
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3">
+          <Icon name="search" size={14} />
+        </span>
+        {searchInput && (
+          <button
+            type="button"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-3 hover:text-ink transition-colors"
+            onClick={() => handleSearch("")}
+          >
+            <Icon name="close" size={14} />
+          </button>
+        )}
+      </div>
       <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
         {FILTERS.map((f) => (
           <Pill

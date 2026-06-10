@@ -27,6 +27,7 @@ export default async function PendingPage({
   }
 
   const { items, totalShipping } = mapCheckoutItems(orden.orders);
+  const buyerAppUrl = orden.returnUrl ?? process.env.BUYER_APP_URL ?? "https://buyer.unihousing.app";
 
   return (
     <PendingView
@@ -37,6 +38,7 @@ export default async function PendingPage({
       statusDetail={orden.mpStatusDetail ?? "—"}
       items={items}
       totalShipping={totalShipping}
+      buyerAppUrl={buyerAppUrl}
     />
   );
 }
