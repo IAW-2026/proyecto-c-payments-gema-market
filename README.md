@@ -1,7 +1,8 @@
 # Payments App — UniHousing
 
 Módulo de pagos de **UniHousing**, una aplicación web orientada a la compra y venta de muebles y artículos para el hogar entre estudiantes en **Bahía Blanca**.
-
+# Deploy
+`https://payments-unihousing.vercel.app/`
 ---
 
 ## Descripción general
@@ -165,7 +166,8 @@ El sistema soporta el rol **admin_payments**:
 - El admin ve el botón **"Disparar trigger"** en la pantalla de Historial (`/payments/history`).
 - También puede acceder a `GET /api/payments/trigger` para simular una compra completa.
 - Estas herramientas generan usuarios, productos y órdenes aleatorias sin necesidad de cargar datos manualmente.
-
+- El admin tiene posibilidad de ver todas las ordenes del sistema y a nombre de quien esta la orden, asi como tambien puede pagar por esa orden
+- La asinacion de usuarios por orden en el trigger, es aleatoria segun todos los usuarios registrados en la bd 
 ### Seguridad del Checkout
 
 - `methods`, `wallet`, `processing`, `success`, `failed` y `pending` validan ownership por usuario (ID interno) y redirigen a `/payments/history` si no corresponde.
@@ -177,8 +179,16 @@ El sistema soporta el rol **admin_payments**:
 
 Las cuentas de prueba para Mercado Pago se encuentran en `TEST_MP_DATA.md`, incluyen credenciales de acceso, tarjetas de prueba y códigos para forzar resultados (APRO, OTHE, CONT, etc.).
 
+Para acceder como usuario normal las credenciales son:
+**Usuario**: `user.payments+clerk_test@iaw.com`
+
+**Contraseña** : `iawuser#`
+
 Para acceder como administrador las credenciales son:
+(Acceder desde google con las mismas credenciales para evitar el codigo de verificacion)
 
-**Usuario**: `payments.admin.unihousing@gmail.com`
+**Usuario**: `admin.payments+clerktest@iaw.com`
 
-**Contraseña**: `adminUNS2026`
+**Contraseña**: `iawuser#`
+
+La clave de verificacion es `424242` para ambos usuarios
