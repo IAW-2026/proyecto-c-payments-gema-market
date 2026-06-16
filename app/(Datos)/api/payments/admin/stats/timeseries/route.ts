@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { validateApiKey, apiKeyResponse } from "@/app/(Logica)/integrations/api-key";
 import { getStatsTimeseries } from "@/app/(Logica)/services/admin-stats.service";
 import type { TimeseriesGranularity, TimeseriesMetric, AdminTimeseriesResponse } from "@/app/(Logica)/types/payments.types";
@@ -44,30 +45,34 @@ export async function GET(request: NextRequest) {
     }
     const field = rawField as "created_at" | "paid_at";
 
-    let dateFrom: Date | undefined;
-    let dateTo: Date | undefined;
+    const dateSchema = z.string().datetime();
 
     const dateFromStr = searchParams.get("date_from");
     const dateToStr = searchParams.get("date_to");
 
-    if (dateFromStr) {
-      dateFrom = new Date(dateFromStr);
-      if (isNaN(dateFrom.getTime())) {
+    let dateFrom: Date | undefined;
+    let dateTo: Date | undefined;
+
+    if (dateFromStr !== null) {
+      const parsed = dateSchema.safeParse(dateFromStr);
+      if (!parsed.success) {
         return NextResponse.json(
           { error: "Formato invalido para 'date_from'. Use ISO 8601." },
           { status: 400 },
         );
       }
+      dateFrom = new Date(parsed.data);
     }
 
-    if (dateToStr) {
-      dateTo = new Date(dateToStr);
-      if (isNaN(dateTo.getTime())) {
+    if (dateToStr !== null) {
+      const parsed = dateSchema.safeParse(dateToStr);
+      if (!parsed.success) {
         return NextResponse.json(
           { error: "Formato invalido para 'date_to'. Use ISO 8601." },
           { status: 400 },
         );
       }
+      dateTo = new Date(parsed.data);
     }
 
     const result = await getStatsTimeseries(granularity, metric, dateFrom, dateTo, field);

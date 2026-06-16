@@ -23,10 +23,12 @@ export default function SignInPage() {
         <div className="flex justify-center">
           <SignIn
             fallbackRedirectUrl="/payments/history?page=1"
+            withSignUp={false}
             appearance={{
               elements: {
                 header: "hidden",
                 card: "pt-8",
+                footerAction: { display: "none" },
               },
             }}
           />
