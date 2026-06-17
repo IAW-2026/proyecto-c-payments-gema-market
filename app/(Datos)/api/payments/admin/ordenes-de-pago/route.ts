@@ -92,6 +92,8 @@ export async function GET(request: NextRequest) {
         status: r.status as PaymentStatus,
         created_at: r.createdAt.toISOString(),
         paid_at: r.paidAt?.toISOString() ?? null,
+        mp_payment_id: r.mpPaymentId ?? null,
+        mp_status_detail: r.mpStatusDetail ?? null,
       })),
       page,
       page_size: pageSize,

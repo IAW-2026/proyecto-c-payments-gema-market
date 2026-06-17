@@ -385,6 +385,8 @@ export interface AdminOrdenRow {
   status: string;
   createdAt: Date;
   paidAt: Date | null;
+  mpPaymentId?: string | null;
+  mpStatusDetail?: string | null;
 }
 
 export async function getAdminOrdenesPaged(
@@ -455,7 +457,7 @@ export async function getAdminOrdenesPaged(
   const offset = (params.page - 1) * params.pageSize;
 
   const countSql = `SELECT COUNT(*)::int AS total FROM "orden_de_pago" ${whereClause}`;
-  const dataSql = `SELECT id, "buyer_id", "orders", "total_amount", currency, status, "created_at", "paid_at" FROM "orden_de_pago" ${whereClause} ORDER BY "${sortColumn}" ${sortDir} LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+  const dataSql = `SELECT id, "buyer_id", "orders", "total_amount", currency, status, "created_at", "paid_at", "mp_payment_id", "mp_status_detail" FROM "orden_de_pago" ${whereClause} ORDER BY "${sortColumn}" ${sortDir} LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
   queryParams.push(params.pageSize, offset);
 
   const [countResult]: Array<{ total: number }> = await prisma.$queryRawUnsafe(
@@ -472,6 +474,8 @@ export async function getAdminOrdenesPaged(
     status: string;
     created_at: Date;
     paid_at: Date | null;
+    mp_payment_id: string | null;
+    mp_status_detail: string | null;
   }> = await prisma.$queryRawUnsafe(dataSql, ...queryParams);
 
   const rows = dataRows.map((r) => ({
@@ -483,6 +487,8 @@ export async function getAdminOrdenesPaged(
     status: r.status,
     createdAt: r.created_at,
     paidAt: r.paid_at,
+    mpPaymentId: r.mp_payment_id,
+    mpStatusDetail: r.mp_status_detail,
   }));
 
   return { rows, total: countResult.total };

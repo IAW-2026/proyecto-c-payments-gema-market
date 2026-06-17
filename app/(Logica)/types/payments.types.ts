@@ -183,6 +183,8 @@ export interface AdminOrdenDePagoItem {
   status: PaymentStatus;
   created_at: string;
   paid_at: string | null;
+  mp_payment_id?: string | null;
+  mp_status_detail?: string | null;
 }
 
 /**
